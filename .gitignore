@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+data/
+sample/real.json
+real-payload.json
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+dist-test/

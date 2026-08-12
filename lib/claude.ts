@@ -2,7 +2,19 @@ import Anthropic from "@anthropic-ai/sdk";
 import { archetypeDescription, archetypeLabel } from "./hooks";
 import { formatCount, formatPercent } from "./metrics";
 import { confidenceLabel } from "./patterns";
-import type { EnrichedPost, HookIdea, PatternFinding, SlideshowPlan } from "./types";
+import type {
+  CommentInsights,
+  EnrichedPost,
+  HookIdea,
+  PatternFinding,
+  SlideshowPlan,
+} from "./types";
+import type {
+  AgeBiasReport,
+  ConfoundPair,
+  DiagnosisSummary,
+  ReplicatedFinding,
+} from "./diagnose";
 
 export const MODEL = "claude-opus-5";
 
@@ -24,6 +36,13 @@ function client(): Anthropic {
 export function buildEvidenceBrief(
   posts: EnrichedPost[],
   findings: PatternFinding[],
+  extras?: {
+    insights?: CommentInsights | null;
+    replicated?: ReplicatedFinding[];
+    diagnosis?: DiagnosisSummary | null;
+    confounds?: ConfoundPair[];
+    ageBias?: AgeBiasReport | null;
+  },
   topN = 12,
 ): string {
   const lines: string[] = [];
@@ -88,6 +107,85 @@ export function buildEvidenceBrief(
     }
   }
 
+  // Replication across independent accounts is the strongest evidence class in
+  // the dataset, so it is stated before anything single-account.
+  if (extras?.replicated?.length) {
+    lines.push("");
+    lines.push("## Replicated across accounts (strongest evidence — these held independently)");
+    for (const item of extras.replicated.slice(0, 10)) {
+      const detail = item.accounts
+        .map((a) => `${a.account} ${a.lift.toFixed(2)}x (n=${a.n})`)
+        .join(", ");
+      lines.push(
+        `- ${item.label} ${item.direction}: ${detail}. Weakest contributing account ${item.weakestLift.toFixed(2)}x — ` +
+          "judge the strength of this replication on that figure, not the largest one.",
+      );
+    }
+  }
+
+  if (extras?.confounds?.length) {
+    lines.push("");
+    lines.push("## Confounded pairs — do NOT treat these as separate effects");
+    for (const pair of extras.confounds.slice(0, 6)) {
+      lines.push(
+        `- "${pair.a.label}" and "${pair.b.label}" sit on ${Math.round(pair.overlap * 100)}% the same posts. ` +
+          "They are probably one effect; attribute to one, not both.",
+      );
+    }
+  }
+
+  if (extras?.diagnosis) {
+    lines.push("");
+    lines.push("## Where this account is losing");
+    lines.push(extras.diagnosis.headline);
+    const c = extras.diagnosis.counts;
+    lines.push(
+      `Counts — reached and resonated: ${c.winner}; good content few saw: ${c["distribution-failure"]}; ` +
+        `reached then lost them: ${c["content-failure"]}; neither: ${c.underperformer}.`,
+    );
+  }
+
+  if (extras?.ageBias?.material) {
+    lines.push("");
+    lines.push("## Caveat on post age");
+    lines.push(extras.ageBias.note);
+  }
+
+  // Comments are the only place demand is measured rather than inferred.
+  if (extras?.insights?.commentCount) {
+    const insights = extras.insights;
+    lines.push("");
+    lines.push("## What the audience is asking for (from comments — demand already proven)");
+    for (const signal of insights.demandSignals.slice(0, 20)) {
+      lines.push(
+        `- [${signal.likes} likes, ${signal.replyCount} replies] "${signal.text}"` +
+          (signal.postHook ? ` — asked on: "${signal.postHook}"` : ""),
+      );
+    }
+
+    if (insights.vocabulary.length) {
+      lines.push("");
+      lines.push("## The audience's own vocabulary (words they use that the creator rarely does)");
+      lines.push(
+        insights.vocabulary
+          .slice(0, 18)
+          .map((v) => `${v.term} (${v.audienceCount}x them / ${v.creatorCount}x creator)`)
+          .join(", "),
+      );
+      lines.push(
+        "Write hooks in these words where it fits naturally. People search and think in their own " +
+          "vocabulary, not the creator's.",
+      );
+    }
+
+    lines.push("");
+    lines.push(
+      `Comment mix: ${formatPercent(insights.questionRate, 0)} asking for something, ` +
+        `${formatPercent(insights.tagRate, 0)} tagging a friend, ` +
+        `${formatPercent(insights.objectionRate, 0)} pushing back.`,
+    );
+  }
+
   return lines.join("\n");
 }
 
@@ -135,6 +233,10 @@ Rules that matter:
 - Never invent a statistic. If the evidence does not support a claim, say what you are extrapolating from instead.
 - A hook is the first line a viewer reads — for a slideshow, the text on slide one. Write hooks that can be read in under two seconds and that create a reason to swipe.
 - Prefer hook archetypes that measurably over-perform in the data over ones that are merely fashionable.
+- Evidence is not all equal. Rank it: replicated across accounts > large-sample single-account lift > small-sample lift > your own judgement. Say which tier you are relying on.
+- If the brief flags two findings as confounded, do not cite both as independent reasons.
+- Where the audience asked a question directly, that is the strongest possible signal — a hook answering a highly-liked question beats one extrapolated from metrics. Lead with those.
+- Use the audience's own vocabulary where it fits naturally.
 - Vary the archetypes across your ideas. Do not return five variations of the same opening.
 - Be specific to the account's actual subject matter, drawn from its existing captions and hashtags. Generic advice is worthless here.
 - 'confidence' is your honest 0-100 read of viral potential given the evidence strength, not a sales pitch.

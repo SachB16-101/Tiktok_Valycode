@@ -2,9 +2,10 @@ import Link from "next/link";
 import { HeroFigure, StatTile } from "@/components/charts";
 import { PostCard } from "@/components/post-card";
 import { PatternBars } from "@/components/pattern-bars";
-import { enrich, formatCount, formatPercent, summarise, topPosts } from "@/lib/metrics";
+import { analyse } from "@/lib/analysis";
+import { formatCount, formatPercent, topPosts } from "@/lib/metrics";
 import type { EnrichedPost } from "@/lib/types";
-import { drags, explainPost, minePatterns, significantFindings } from "@/lib/patterns";
+import { drags, explainPost, significantFindings } from "@/lib/patterns";
 import { loadDataset } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +15,8 @@ export default async function DashboardPage() {
 
   if (!dataset) return <EmptyState />;
 
-  const posts = enrich(dataset.posts);
-  const summary = summarise(posts);
-  const findings = minePatterns(posts);
+  const analysis = analyse(dataset);
+  const { posts, summary, findings } = analysis;
   const winners = significantFindings(findings).slice(0, 10);
   const losers = drags(findings).slice(0, 5);
   const best = topPosts(posts, 6);
@@ -107,6 +107,115 @@ export default async function DashboardPage() {
       </div>
 
       <section className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-tight">Where you are losing</h2>
+        <div className="card space-y-4 px-5 py-5">
+          <p className="text-sm leading-relaxed">{analysis.diagnosisSummary.headline}</p>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <DiagnosisTile
+              label="Reached and resonated"
+              count={analysis.diagnosisSummary.counts.winner}
+              total={analysis.diagnoses.size}
+              tone="var(--good)"
+            />
+            <DiagnosisTile
+              label="Good content, few saw it"
+              count={analysis.diagnosisSummary.counts["distribution-failure"]}
+              total={analysis.diagnoses.size}
+              tone="var(--warning)"
+            />
+            <DiagnosisTile
+              label="Reached, then lost them"
+              count={analysis.diagnosisSummary.counts["content-failure"]}
+              total={analysis.diagnoses.size}
+              tone="var(--warning)"
+            />
+            <DiagnosisTile
+              label="Neither"
+              count={analysis.diagnosisSummary.counts.underperformer}
+              total={analysis.diagnoses.size}
+              tone="var(--text-muted)"
+            />
+          </div>
+          <p className="muted text-xs">
+            Split on reach (views vs your median) and resonance (engagement vs your median). The two
+            fail for opposite reasons and need opposite fixes, so one blended score would hide the
+            advice.
+          </p>
+        </div>
+      </section>
+
+      {analysis.replicated.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">Holds across accounts</h2>
+          <p className="secondary max-w-3xl text-sm">
+            Patterns that reproduced independently on more than one of your accounts. This is the
+            strongest evidence in the dataset — a big number on one account can be luck, the same
+            direction on two separate audiences much less so. Act on these first.
+          </p>
+          <div className="card divide-y" style={{ borderColor: "var(--border)" }}>
+            {analysis.replicated.slice(0, 8).map((item, i) => (
+              <div
+                key={`${item.dimension}-${item.value}`}
+                className="flex flex-wrap items-baseline justify-between gap-3 px-5 py-3"
+                style={{ borderTop: i ? "1px solid var(--border)" : undefined }}
+              >
+                <div>
+                  <span className="font-medium">{item.label}</span>
+                  <span
+                    className="ml-2 text-sm"
+                    style={{ color: item.direction === "helps" ? "var(--good)" : "var(--critical)" }}
+                  >
+                    {item.direction}
+                  </span>
+                </div>
+                <span className="muted text-xs">
+                  {item.accounts
+                    .map((a) => `${a.account} ${a.lift.toFixed(2)}× (n=${a.n})`)
+                    .join("  ·  ")}
+                  <span className="ml-2">— weakest {item.weakestLift.toFixed(2)}×</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {analysis.confounds.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">Read these with care</h2>
+          <div className="card space-y-2 px-5 py-4 text-sm">
+            <p className="secondary">
+              These findings sit on largely the same posts, so they are probably one effect being
+              reported several times. Changing both would be changing one thing twice.
+            </p>
+            <ul className="space-y-1">
+              {analysis.confounds.slice(0, 5).map((pair, i) => (
+                <li key={i} className="secondary flex gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: "var(--warning)" }}
+                  />
+                  <span>
+                    <strong className="text-[var(--text-primary)]">{pair.a.label}</strong> and{" "}
+                    <strong className="text-[var(--text-primary)]">{pair.b.label}</strong> overlap on{" "}
+                    {Math.round(pair.overlap * 100)}% of the same posts.
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {analysis.ageBias.material && (
+        <div className="card px-4 py-3 text-sm" style={{ borderColor: "var(--warning)" }}>
+          <span className="font-medium">Post age is skewing the comparison. </span>
+          <span className="secondary">{analysis.ageBias.note}</span>
+        </div>
+      )}
+
+      <section className="space-y-3">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="text-lg font-semibold tracking-tight">What makes them win</h2>
           <Link href="/patterns" className="secondary text-sm underline">
@@ -166,6 +275,31 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+    </div>
+  );
+}
+
+function DiagnosisTile({
+  label,
+  count,
+  total,
+  tone,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  tone: string;
+}) {
+  const share = total ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="rounded-lg px-3 py-2.5" style={{ border: "1px solid var(--border)" }}>
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-semibold" style={{ color: tone }}>
+          {count}
+        </span>
+        <span className="muted text-xs">{share}%</span>
+      </div>
+      <div className="secondary mt-1 text-xs leading-snug">{label}</div>
     </div>
   );
 }

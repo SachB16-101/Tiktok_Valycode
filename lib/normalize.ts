@@ -1,3 +1,4 @@
+import { looksLikeComments, normaliseComments } from "./comments";
 import type { Dataset, FieldMapping, Post, PostFormat } from "./types";
 
 /**
@@ -457,18 +458,35 @@ export interface IngestInput {
 
 export function ingest(files: IngestInput[], mappingOverride?: FieldMapping): Dataset {
   const allRecords: Rec[] = [];
+  const commentRecords: Rec[] = [];
   const accountHints: string[] = [];
 
   for (const file of files) {
     const parsed = parseFileBody(file.body);
     const records = findRecordArray(parsed);
     if (!records.length) {
-      throw new Error(`No post records found in ${file.filename}`);
+      throw new Error(`No records found in ${file.filename}`);
     }
+
+    // Comment exports and post exports can be dropped in together — they are
+    // told apart by shape, so the user never has to say which is which.
+    if (looksLikeComments(records)) {
+      commentRecords.push(...records);
+      continue;
+    }
+
     allRecords.push(...records);
     // "@valycode.json" -> "valycode", a decent fallback when the records
     // themselves carry no account field.
     accountHints.push(file.filename.replace(/\.(json|ndjson|txt)$/i, "").replace(/^@/, ""));
+  }
+
+  if (!allRecords.length) {
+    throw new Error(
+      commentRecords.length
+        ? "Those files look like comments. Import your posts export first, then add comments."
+        : "No post records found.",
+    );
   }
 
   const mapping = mappingOverride ?? inferMapping(allRecords);
@@ -482,6 +500,7 @@ export function ingest(files: IngestInput[], mappingOverride?: FieldMapping): Da
 
   return {
     posts: dedupe(posts),
+    comments: normaliseComments(commentRecords),
     mapping,
     unmappedKeys: [...seen].filter((key) => !consumed.has(key)).sort(),
     sourceFiles: files.map((f) => f.filename),

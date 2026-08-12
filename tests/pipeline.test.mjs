@@ -267,3 +267,180 @@ test("duplicate posts across files collapse to one record", () => {
   ]);
   assert.equal(dataset.posts.length, 3, "id 1 should appear once");
 });
+
+/* ------------------------------------------------------------------ *
+ * Comments and the critical-reading layer
+ * ------------------------------------------------------------------ */
+
+const { looksLikeComments, normaliseComments, classifyComment, vocabularyGap, analyseComments } =
+  await import("../dist-test/lib/comments.js");
+const {
+  assessAgeBias,
+  diagnosePosts,
+  summariseDiagnoses,
+  findConfounds,
+  findReplicatedPatterns,
+} = await import("../dist-test/lib/diagnose.js");
+
+const commentBody = JSON.stringify([
+  { cid: "1", text: "how do you price a first client?", diggCount: 90, videoWebUrl: "https://www.tiktok.com/@v/video/741000000000000" },
+  { cid: "2", text: "this doesn't work in a saturated niche", diggCount: 12, videoWebUrl: "https://www.tiktok.com/@v/video/741000000000000" },
+  { cid: "3", text: "@sam look at this", diggCount: 3, videoWebUrl: "https://www.tiktok.com/@v/video/741000000000001" },
+  { cid: "4", text: "love this, thank you", diggCount: 5, videoWebUrl: "https://www.tiktok.com/@v/video/741000000000001" },
+]);
+
+test("comment files are recognised by shape, not by filename", () => {
+  const comments = JSON.parse(commentBody);
+  assert.equal(looksLikeComments(comments), true);
+
+  const posts = JSON.parse(sample).slice(0, 5);
+  assert.equal(looksLikeComments(posts), false, "posts must never be mistaken for comments");
+});
+
+test("comments join to posts by the video id inside the URL", () => {
+  const parsed = normaliseComments(JSON.parse(commentBody));
+  assert.equal(parsed.length, 4);
+  assert.equal(parsed[0].postId, "741000000000000");
+  assert.equal(parsed[2].postId, "741000000000001");
+  assert.equal(parsed[0].likes, 90);
+});
+
+test("posts and comments can be imported together in one go", () => {
+  const dataset = ingest([
+    { filename: "posts.json", body: sample },
+    { filename: "comments.json", body: commentBody },
+  ]);
+  assert.equal(dataset.posts.length, 140);
+  assert.equal(dataset.comments.length, 4);
+});
+
+test("comment intent separates demand from praise", () => {
+  assert.equal(classifyComment("how do you do this?"), "question");
+  assert.equal(classifyComment("drop the link"), "request");
+  assert.equal(classifyComment("please make a part 2"), "request");
+  assert.equal(classifyComment("this doesn't work"), "objection");
+  assert.equal(classifyComment("@sam look"), "tag");
+  assert.equal(classifyComment("love this"), "praise");
+});
+
+test("vocabulary gap surfaces topic words, not praise filler", () => {
+  const posts = enrich(ingest([{ filename: "p.json", body: sample }]).posts);
+  const comments = normaliseComments(
+    JSON.parse(
+      JSON.stringify(
+        Array.from({ length: 30 }, (_, i) => ({
+          cid: String(i),
+          text:
+            i % 2
+              ? "how do i handle scope creep with a retainer client?"
+              : "amazing, thank you so much, love this, needed it today",
+          diggCount: 1,
+          videoWebUrl: `https://www.tiktok.com/@v/video/7410000000000${String(i).padStart(2, "0")}`,
+        })),
+      ),
+    ),
+  );
+  const terms = vocabularyGap(comments, posts).map((t) => t.term);
+  assert.ok(terms.includes("scope") || terms.includes("retainer") || terms.includes("creep"),
+    `expected topic terms, got: ${terms.join(", ")}`);
+  for (const filler of ["thank", "love", "amazing", "needed", "today"]) {
+    assert.ok(!terms.includes(filler), `"${filler}" is praise filler and must be excluded`);
+  }
+});
+
+test("reach and resonance are diagnosed separately", () => {
+  const body = JSON.stringify([
+    // High views, low engagement -> hook worked, content did not.
+    { id: "1", playCount: 100000, diggCount: 10, text: "a" },
+    // Low views, high engagement -> content worked, distribution did not.
+    { id: "2", playCount: 100, diggCount: 40, text: "b" },
+    { id: "3", playCount: 90000, diggCount: 9, text: "c" },
+    { id: "4", playCount: 120, diggCount: 50, text: "d" },
+  ]);
+  const posts = enrich(ingest([{ filename: "x.json", body }]).posts);
+  const d = diagnosePosts(posts);
+  assert.equal(d.get("2").diagnosis, "distribution-failure");
+  assert.equal(d.get("1").diagnosis, "content-failure");
+
+  const s = summariseDiagnoses(d);
+  assert.equal(s.counts["distribution-failure"] + s.counts["content-failure"], 4);
+});
+
+test("age bias is detected when older posts systematically out-perform", () => {
+  const now = Date.parse("2026-01-01T00:00:00Z");
+  const posts = enrich(
+    ingest([
+      {
+        filename: "x.json",
+        body: JSON.stringify(
+          Array.from({ length: 40 }, (_, i) => ({
+            id: String(i),
+            text: "t",
+            // Older posts (higher i) get monotonically more views.
+            playCount: 1000 + i * 500,
+            createTimeISO: new Date(now - i * 30 * 86400000).toISOString(),
+          })),
+        ),
+      },
+    ]).posts,
+  );
+  const report = assessAgeBias(posts, now);
+  assert.ok(report.correlation > 0.8, `expected strong positive correlation, got ${report.correlation}`);
+  assert.equal(report.material, true);
+
+  // A dataset with no age relationship must not raise the flag.
+  const flat = enrich(
+    ingest([
+      {
+        filename: "y.json",
+        body: JSON.stringify(
+          Array.from({ length: 40 }, (_, i) => ({
+            id: String(i),
+            text: "t",
+            playCount: 1000 + ((i * 7919) % 500),
+            createTimeISO: new Date(now - i * 30 * 86400000).toISOString(),
+          })),
+        ),
+      },
+    ]).posts,
+  );
+  assert.equal(assessAgeBias(flat, now).material, false);
+});
+
+test("confounded findings are flagged when they sit on the same posts", () => {
+  const findings = [
+    { dimension: "hashtag", value: "ai", label: "#ai", n: 10, lift: 1.8, pValue: 0.01, medianOutlier: 1.8, medianEngagement: null, medianViews: 100, exampleIds: [] },
+    { dimension: "format", value: "photo", label: "Slideshow", n: 10, lift: 1.7, pValue: 0.01, medianOutlier: 1.7, medianEngagement: null, medianViews: 100, exampleIds: [] },
+    { dimension: "sound", value: "x", label: "x", n: 10, lift: 1.6, pValue: 0.01, medianOutlier: 1.6, medianEngagement: null, medianViews: 100, exampleIds: [] },
+  ];
+  const ids = new Set(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]);
+  const memberships = new Map([
+    ["hashtag:ai", ids],
+    ["format:photo", ids],                      // identical set -> confounded
+    ["sound:x", new Set(["p", "q", "r", "s"])], // disjoint -> independent
+  ]);
+  const pairs = findConfounds(findings, memberships);
+  assert.equal(pairs.length, 1);
+  assert.equal(pairs[0].overlap, 1);
+});
+
+test("replication requires the same direction on multiple accounts", () => {
+  const mk = (dimension, value, lift, n) => ({
+    dimension, value, label: value, n, lift, pValue: 0.01,
+    medianOutlier: lift, medianEngagement: null, medianViews: 100, exampleIds: [],
+  });
+
+  const replicated = findReplicatedPatterns(
+    new Map([
+      ["acct1", [mk("hashtag", "appdeveloper", 2.2, 11), mk("hashtag", "ai", 0.4, 40)]],
+      ["acct2", [mk("hashtag", "appdeveloper", 1.9, 9), mk("hashtag", "ai", 0.6, 47)]],
+      // Disagrees on direction -> must not count as replicated.
+      ["acct3", [mk("hashtag", "devtok", 1.5, 8)]],
+    ]),
+  );
+
+  const labels = replicated.map((r) => `${r.value}:${r.direction}`);
+  assert.ok(labels.includes("appdeveloper:helps"));
+  assert.ok(labels.includes("ai:hurts"));
+  assert.ok(!labels.some((l) => l.startsWith("devtok")), "one account is not a replication");
+});

@@ -89,8 +89,54 @@ export interface FieldMapping {
   [canonicalField: string]: string | null;
 }
 
+export interface Comment {
+  id: string;
+  /** The post this comment belongs to, joined by video id. */
+  postId: string;
+  text: string;
+  author: string | null;
+  likes: number | null;
+  replyCount: number | null;
+  createdAt: number | null;
+  isReply: boolean;
+}
+
+/** A question or request in the comments — a content idea with proven demand. */
+export interface DemandSignal {
+  text: string;
+  intent: "question" | "request";
+  likes: number;
+  replyCount: number;
+  postId: string;
+  postHook: string | null;
+  postViews: number | null;
+}
+
+/** A word the audience uses more than the creator does. */
+export interface VocabularyTerm {
+  term: string;
+  audienceCount: number;
+  creatorCount: number;
+  /** How much more often the audience says it than the creator. */
+  ratio: number;
+}
+
+export interface CommentInsights {
+  commentCount: number;
+  postsWithComments: number;
+  unmatchedComments: number;
+  intents: Record<string, number>;
+  tagRate: number;
+  questionRate: number;
+  objectionRate: number;
+  demandSignals: DemandSignal[];
+  vocabulary: VocabularyTerm[];
+  topComments: { text: string; likes: number; postHook: string | null }[];
+}
+
 export interface Dataset {
   posts: Post[];
+  comments: Comment[];
   /** Which source key each canonical field was read from. */
   mapping: FieldMapping;
   /** Keys present in the source that we did not consume. */

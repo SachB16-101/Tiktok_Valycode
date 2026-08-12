@@ -12,6 +12,7 @@ const NAV = [
   { href: "/", label: "Dashboard" },
   { href: "/posts", label: "Posts" },
   { href: "/patterns", label: "Patterns" },
+  { href: "/audience", label: "Audience" },
   { href: "/ideas", label: "Hook ideas" },
   { href: "/studio", label: "Slideshow studio" },
   { href: "/ingest", label: "Data" },

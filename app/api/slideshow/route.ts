@@ -3,6 +3,7 @@ import { buildEvidenceBrief, generateSlideshow, hasApiKey } from "@/lib/claude";
 import { fallbackSlideshow } from "@/lib/fallback";
 import { enrich } from "@/lib/metrics";
 import { minePatterns } from "@/lib/patterns";
+import { analyse } from "@/lib/analysis";
 import { loadDataset, saveArtifact } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -24,8 +25,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A hook is required" }, { status: 400 });
   }
 
-  const posts = enrich(dataset.posts);
-  const findings = minePatterns(posts);
+  const a = analyse(dataset);
+  const { posts, findings } = a;
   const target = Math.max(3, Math.min(15, slideCount));
 
   if (!hasApiKey()) {
@@ -37,7 +38,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const brief = buildEvidenceBrief(posts, findings);
+    const brief = buildEvidenceBrief(posts, findings, {
+      insights: a.insights,
+      replicated: a.replicated,
+      diagnosis: a.diagnosisSummary,
+      confounds: a.confounds,
+      ageBias: a.ageBias,
+    });
     const plan = await generateSlideshow(brief, hook, notes, target);
     await saveArtifact(`slideshow-${Date.now()}`, plan);
     return NextResponse.json({ plan, source: "claude" });

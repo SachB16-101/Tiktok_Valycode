@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildEvidenceBrief, generateIdeas, hasApiKey } from "@/lib/claude";
 import { fallbackIdeas } from "@/lib/fallback";
-import { enrich } from "@/lib/metrics";
-import { minePatterns } from "@/lib/patterns";
+import { analyse } from "@/lib/analysis";
 import { loadDataset } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -19,8 +18,8 @@ export async function POST(request: Request) {
     steer?: string | null;
   };
 
-  const posts = enrich(dataset.posts);
-  const findings = minePatterns(posts);
+  const a = analyse(dataset);
+  const { posts, findings } = a;
   const requested = Math.max(1, Math.min(10, count));
 
   if (!hasApiKey()) {
@@ -32,7 +31,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const brief = buildEvidenceBrief(posts, findings);
+    const brief = buildEvidenceBrief(posts, findings, {
+      insights: a.insights,
+      replicated: a.replicated,
+      diagnosis: a.diagnosisSummary,
+      confounds: a.confounds,
+      ageBias: a.ageBias,
+    });
     const ideas = await generateIdeas(brief, requested, steer);
     return NextResponse.json({ ideas, source: "claude" });
   } catch (error) {

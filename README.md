@@ -8,11 +8,18 @@ finished slideshows built slide by slide.
 
 ```bash
 npm install
-cp .env.example .env.local        # add ANTHROPIC_API_KEY for AI generation
-npm run dev                        # http://localhost:3000
+npm run setup     # paste your Anthropic API key, it gets verified before saving
+npm run dev       # http://localhost:3000
 ```
 
 Then open **Data** and drop your JSON in.
+
+`npm run setup` writes `.env.local` (gitignored, chmod 600) and checks the key
+against the API before saving it, so a typo fails here rather than halfway
+through a generation. `npm run setup:check` re-verifies an existing key.
+
+The key is only needed for hook generation and slideshow authoring. Ingest,
+analysis, charts, slide rendering and export all work without one.
 
 ## What it does with your data
 
@@ -96,6 +103,8 @@ Caption on the Data page.
 
 | Command | What it does |
 |---|---|
+| `npm run setup` | Add and verify your API key |
+| `npm run setup:check` | Re-verify the configured key |
 | `npm run dev` | Development server |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |

@@ -8,7 +8,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "pretest": "tsc -p tsconfig.test.json",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "setup": "node scripts/setup.mjs",
+    "setup:check": "node scripts/setup.mjs check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

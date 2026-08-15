@@ -8,7 +8,7 @@ type Rec = Record<string, unknown>;
  *
  * Metrics tell you which posts won. Comments tell you *why people cared* and,
  * more usefully, what they wanted next. A question in the comments is a content
- * request with demand already proven — someone cared enough to type it.
+ * request with demand already proven, someone cared enough to type it.
  *
  * The other thing comments give you that nothing else does is the audience's
  * own vocabulary. Creators systematically describe their work in their own
@@ -161,7 +161,7 @@ const STOPWORDS = new Set(
     "cant lets u ur ya yall pls plz lol lmao omg bro bruh fr ngl tbh imo idk btw rn though although " +
     "because since while whether either neither both each every " +
     // Reaction vocabulary. It is real language but it describes the audience's
-    // feelings, not the subject — including it drowns out the topic terms.
+    // feelings, not the subject, including it drowns out the topic terms.
     "love loved loving amazing great good best better nice cool awesome perfect thank thanks thankyou " +
     "please helpful help needed need underrated goat fire insane crazy wild actually really literally " +
     "honestly seriously definitely absolutely exactly totally basically obviously today tomorrow " +
@@ -188,7 +188,7 @@ function tokenise(text: string): string[] {
 /**
  * Terms the audience uses that the creator does not. Scored by how much more
  * often a term appears in comments than in the creator's own captions and
- * hashtags — this is the language gap, and it is where hooks should be written
+ * hashtags, this is the language gap, and it is where hooks should be written
  * from, because it is the language people actually think in.
  */
 export function vocabularyGap(
@@ -197,7 +197,7 @@ export function vocabularyGap(
   limit = 20,
 ): VocabularyTerm[] {
   // Only questions and requests carry subject matter. Praise describes how
-  // someone felt, not what they want — mining it returns "thank" and "amazing"
+  // someone felt, not what they want, mining it returns "thank" and "amazing"
   // and buries the terms that could actually become a hook.
   const substantive = comments.filter((c) => {
     const intent = classifyComment(c.text);
@@ -296,7 +296,7 @@ export function analyseComments(posts: EnrichedPost[], comments: Comment[]): Com
     }
   }
 
-  // A question with many likes is many people asking it at once — that is the
+  // A question with many likes is many people asking it at once, that is the
   // strongest content request available anywhere in the data.
   demand.sort((a, b) => b.likes + b.replyCount * 2 - (a.likes + a.replyCount * 2));
 

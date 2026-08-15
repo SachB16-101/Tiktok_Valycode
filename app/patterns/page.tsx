@@ -37,12 +37,12 @@ export default async function PatternsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Patterns</h1>
+        <h1 className="text-[34px] leading-[1.08] font-medium tracking-[-0.035em]">Patterns</h1>
         <p className="secondary mt-1 max-w-3xl text-sm">
           Every feature your posts carry, tested against every other post in the account. Lift is
           the ratio of median performance with the feature to median performance without it, where
-          performance is views divided by your own account median — so post size never distorts the
-          comparison. The p-value comes from a Mann–Whitney rank-sum test, which makes no
+          performance is views divided by your own account median, so post size never distorts the
+          comparison. The p-value comes from a Mann-Whitney rank-sum test, which makes no
           assumptions about how view counts are distributed.
         </p>
       </div>
@@ -56,16 +56,16 @@ export default async function PatternsPage() {
 
       {byDimension.map((group) => (
         <section key={group.key} className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">{group.label}</h2>
-          <div className="card px-5 py-5">
+          <h2 className="text-[19px] font-medium tracking-[-0.02em]">{group.label}</h2>
+          <div className="panel px-5 py-5">
             <PatternBars findings={group.items} />
           </div>
           <details className="text-sm">
             <summary className="secondary cursor-pointer">Show the numbers</summary>
-            <div className="card scroll-x mt-2">
+            <div className="panel scroll-x mt-2">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
-                  <tr className="muted text-left text-xs uppercase tracking-wide">
+                  <tr className="muted text-left text-[11px]">
                     <th className="px-4 py-2.5 font-medium">Value</th>
                     <th className="px-3 py-2.5 text-right font-medium">Posts</th>
                     <th className="px-3 py-2.5 text-right font-medium">Median views</th>
@@ -76,7 +76,7 @@ export default async function PatternsPage() {
                 </thead>
                 <tbody>
                   {group.items.map((item) => (
-                    <tr key={item.value} style={{ borderTop: "1px solid var(--border)" }}>
+                    <tr key={item.value} style={{ borderTop: "1px solid var(--line)" }}>
                       <td className="px-4 py-2 font-medium">{item.label}</td>
                       <td className="secondary px-3 py-2 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>
                         {item.n}

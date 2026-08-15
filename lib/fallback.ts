@@ -6,7 +6,7 @@ import type { EnrichedPost, HookIdea, PatternFinding, SlideshowPlan } from "./ty
 /**
  * Evidence-only generators used when no Anthropic API key is configured.
  *
- * These do not write new copy — they recombine the account's own winning
+ * These do not write new copy, they recombine the account's own winning
  * patterns into templates. Weaker than the model path, but they keep the app
  * useful offline and make the underlying evidence visible, since every
  * suggestion is a literal restatement of a measured lift.
@@ -100,7 +100,7 @@ export function fallbackIdeas(
       );
     }
     if (!evidence.length) {
-      evidence.push("Not enough data yet for a measured lift — treat this as a starting hypothesis.");
+      evidence.push("Not enough data yet for a measured lift, treat this as a starting hypothesis.");
     }
 
     ideas.push({
@@ -171,6 +171,6 @@ export function fallbackSlideshow(
     hashtags: hashtagLifts.length ? hashtagLifts : topics,
     soundSuggestion: soundLift?.value ?? "A trending sound with a low-key beat under 90 BPM",
     strategy:
-      "Template scaffold generated without a model — set ANTHROPIC_API_KEY to have Claude write the actual slide copy and image briefs from your data. Slide count and hashtags are still drawn from your measured lifts.",
+      "Template scaffold generated without a model, set ANTHROPIC_API_KEY to have Claude write the actual slide copy and image briefs from your data. Slide count and hashtags are still drawn from your measured lifts.",
   };
 }

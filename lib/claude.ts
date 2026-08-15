@@ -24,7 +24,7 @@ export function hasApiKey(): boolean {
 
 function client(): Anthropic {
   // Zero-arg constructor resolves ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, or
-  // an `ant auth login` profile — all three work without code changes.
+  // an `ant auth login` profile, all three work without code changes.
   return new Anthropic();
 }
 
@@ -111,13 +111,13 @@ export function buildEvidenceBrief(
   // the dataset, so it is stated before anything single-account.
   if (extras?.replicated?.length) {
     lines.push("");
-    lines.push("## Replicated across accounts (strongest evidence — these held independently)");
+    lines.push("## Replicated across accounts (strongest evidence, these held independently)");
     for (const item of extras.replicated.slice(0, 10)) {
       const detail = item.accounts
         .map((a) => `${a.account} ${a.lift.toFixed(2)}x (n=${a.n})`)
         .join(", ");
       lines.push(
-        `- ${item.label} ${item.direction}: ${detail}. Weakest contributing account ${item.weakestLift.toFixed(2)}x — ` +
+        `- ${item.label} ${item.direction}: ${detail}. Weakest contributing account ${item.weakestLift.toFixed(2)}x, ` +
           "judge the strength of this replication on that figure, not the largest one.",
       );
     }
@@ -125,7 +125,7 @@ export function buildEvidenceBrief(
 
   if (extras?.confounds?.length) {
     lines.push("");
-    lines.push("## Confounded pairs — do NOT treat these as separate effects");
+    lines.push("## Confounded pairs, do NOT treat these as separate effects");
     for (const pair of extras.confounds.slice(0, 6)) {
       lines.push(
         `- "${pair.a.label}" and "${pair.b.label}" sit on ${Math.round(pair.overlap * 100)}% the same posts. ` +
@@ -140,7 +140,7 @@ export function buildEvidenceBrief(
     lines.push(extras.diagnosis.headline);
     const c = extras.diagnosis.counts;
     lines.push(
-      `Counts — reached and resonated: ${c.winner}; good content few saw: ${c["distribution-failure"]}; ` +
+      `Counts, reached and resonated: ${c.winner}; good content few saw: ${c["distribution-failure"]}; ` +
         `reached then lost them: ${c["content-failure"]}; neither: ${c.underperformer}.`,
     );
   }
@@ -155,11 +155,11 @@ export function buildEvidenceBrief(
   if (extras?.insights?.commentCount) {
     const insights = extras.insights;
     lines.push("");
-    lines.push("## What the audience is asking for (from comments — demand already proven)");
+    lines.push("## What the audience is asking for (from comments, demand already proven)");
     for (const signal of insights.demandSignals.slice(0, 20)) {
       lines.push(
         `- [${signal.likes} likes, ${signal.replyCount} replies] "${signal.text}"` +
-          (signal.postHook ? ` — asked on: "${signal.postHook}"` : ""),
+          (signal.postHook ? `, asked on: "${signal.postHook}"` : ""),
       );
     }
 
@@ -231,11 +231,11 @@ Your job is to propose hooks with the highest chance of travelling for THIS acco
 Rules that matter:
 - Ground every recommendation in the supplied evidence. When you claim something will work, name the measured lift, the sample size, or the specific post id that supports it.
 - Never invent a statistic. If the evidence does not support a claim, say what you are extrapolating from instead.
-- A hook is the first line a viewer reads — for a slideshow, the text on slide one. Write hooks that can be read in under two seconds and that create a reason to swipe.
+- A hook is the first line a viewer reads, for a slideshow, the text on slide one. Write hooks that can be read in under two seconds and that create a reason to swipe.
 - Prefer hook archetypes that measurably over-perform in the data over ones that are merely fashionable.
 - Evidence is not all equal. Rank it: replicated across accounts > large-sample single-account lift > small-sample lift > your own judgement. Say which tier you are relying on.
 - If the brief flags two findings as confounded, do not cite both as independent reasons.
-- Where the audience asked a question directly, that is the strongest possible signal — a hook answering a highly-liked question beats one extrapolated from metrics. Lead with those.
+- Where the audience asked a question directly, that is the strongest possible signal, a hook answering a highly-liked question beats one extrapolated from metrics. Lead with those.
 - Use the audience's own vocabulary where it fits naturally.
 - Vary the archetypes across your ideas. Do not return five variations of the same opening.
 - Be specific to the account's actual subject matter, drawn from its existing captions and hashtags. Generic advice is worthless here.
@@ -321,7 +321,7 @@ How a slideshow earns distribution:
 For each slide produce:
 - onImageText: the exact words to burn onto the image. Short, punchy, no hashtags.
 - subText: an optional smaller supporting line, or null when the slide is stronger without one.
-- imageBrief: a concrete, shootable description of the picture — subject, framing, mood, colour. Specific enough that the creator can shoot it or find it in a stock library today. Never vague.
+- imageBrief: a concrete, shootable description of the picture, subject, framing, mood, colour. Specific enough that the creator can shoot it or find it in a stock library today. Never vague.
 - purpose: one sentence on why this slide sits at this point in the sequence.
 
 Rules:
@@ -355,7 +355,7 @@ Build a complete slideshow post, slide by slide, built around this hook:
 
 "${hook}"
 
-Target roughly ${slideCount} slides — deviate if the content genuinely needs more or fewer, and say why in 'strategy'.${
+Target roughly ${slideCount} slides, deviate if the content genuinely needs more or fewer, and say why in 'strategy'.${
           notes ? `\n\nAdditional direction from the creator: ${notes}` : ""
         }`,
       },

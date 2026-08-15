@@ -137,16 +137,16 @@ export default function IngestPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Import your TikTok data</h1>
+        <h1 className="text-[34px] leading-[1.08] font-medium tracking-[-0.035em]">Import your TikTok data</h1>
         <p className="secondary mt-1 max-w-2xl text-sm">
           Drop in one or more JSON files. Official TikTok data exports, Research API dumps, Creator
-          Center exports and third-party scraper output all work — fields are detected by matching
+          Center exports and third-party scraper output all work, fields are detected by matching
           key names, and you can correct anything it gets wrong before importing.
         </p>
       </div>
 
       {existing && !preview && (
-        <div className="card flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
+        <div className="panel flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
           <span className="secondary">
             Currently loaded: <strong className="text-[var(--text-primary)]">{existing.postCount.toLocaleString()} posts</strong>
             {existing.sourceFiles.length > 0 && ` from ${existing.sourceFiles.join(", ")}`}
@@ -157,8 +157,8 @@ export default function IngestPage() {
               setExisting(null);
               router.refresh();
             }}
-            className="rounded-lg border px-3 py-1.5"
-            style={{ borderColor: "var(--border)" }}
+            className="rounded-[8px] border px-3 py-1.5"
+            style={{ borderColor: "var(--line)" }}
           >
             Clear data
           </button>
@@ -166,7 +166,7 @@ export default function IngestPage() {
       )}
 
       <div
-        className="card flex flex-col items-center justify-center gap-3 border-dashed px-6 py-12 text-center"
+        className="panel flex flex-col items-center justify-center gap-3 border-dashed px-6 py-12 text-center"
         style={{ borderStyle: "dashed", borderWidth: 2 }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -178,8 +178,8 @@ export default function IngestPage() {
         <p className="muted text-sm">or</p>
         <button
           onClick={() => inputRef.current?.click()}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white"
-          style={{ background: "var(--lift)" }}
+          className="rounded-[8px] px-4 py-2 text-sm font-medium "
+          style={{ background: "var(--accent)", color: "var(--on-accent)" }}
           disabled={busy}
         >
           {busy ? "Reading…" : "Choose files"}
@@ -198,7 +198,7 @@ export default function IngestPage() {
       </div>
 
       {error && (
-        <div className="card px-4 py-3 text-sm" style={{ borderColor: "var(--critical)", color: "var(--critical)" }}>
+        <div className="panel px-4 py-3 text-sm" style={{ borderColor: "var(--data-drag)", color: "var(--data-drag)" }}>
           {error}
         </div>
       )}
@@ -206,28 +206,28 @@ export default function IngestPage() {
       {preview && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">
+            <h2 className="text-[19px] font-medium tracking-[-0.02em]">
               Found {preview.recordCount.toLocaleString()} records
             </h2>
             <button
               onClick={() => void commit()}
               disabled={busy}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              style={{ background: "var(--lift)" }}
+              className="rounded-[8px] px-4 py-2 text-sm font-medium disabled:opacity-50"
+              style={{ background: "var(--accent)", color: "var(--on-accent)" }}
             >
               {busy ? "Importing…" : "Import with this mapping"}
             </button>
           </div>
 
           <p className="secondary text-sm">
-            Check the mapping below. Anything set to <em>Not mapped</em> is simply skipped — the
+            Check the mapping below. Anything set to <em>Not mapped</em> is simply skipped, the
             analysis never invents a number it does not have.
           </p>
 
-          <div className="card scroll-x">
+          <div className="panel scroll-x">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
-                <tr className="muted text-left text-xs uppercase tracking-wide">
+                <tr className="muted text-left text-[11px]">
                   <th className="px-4 py-2.5 font-medium">Field</th>
                   <th className="px-4 py-2.5 font-medium">Source key</th>
                   <th className="px-4 py-2.5 font-medium">Sample value</th>
@@ -238,7 +238,7 @@ export default function IngestPage() {
                   const key = mapping[field] ?? null;
                   const sample = key ? flattenSample(preview.sampleRecord)[key] : undefined;
                   return (
-                    <tr key={field} style={{ borderTop: "1px solid var(--border)" }}>
+                    <tr key={field} style={{ borderTop: "1px solid var(--line)" }}>
                       <td className="px-4 py-2 font-medium">{FIELD_LABELS[field] ?? field}</td>
                       <td className="px-4 py-2">
                         <select
@@ -257,7 +257,7 @@ export default function IngestPage() {
                         </select>
                       </td>
                       <td className="muted max-w-[240px] truncate px-4 py-2 text-xs">
-                        {sample === undefined || sample === null ? "—" : String(sample).slice(0, 80)}
+                        {sample === undefined || sample === null ? "-" : String(sample).slice(0, 80)}
                       </td>
                     </tr>
                   );

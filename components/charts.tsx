@@ -3,256 +3,239 @@
 import { useId, useState } from "react";
 
 /**
- * Hand-rolled SVG charts. All marks follow the same specs: ≤24px bars with a
- * 4px rounded data-end squared at the baseline, hairline recessive gridlines,
- * text in ink tokens rather than the series color, and a hover tooltip on
- * every mark.
+ * Hand-drawn SVG charts. Marks follow fixed specs: bars capped at 20px with a
+ * 4px rounded data end squared at the baseline, hairline gridlines that stay
+ * recessive, numerals in mono, and text in ink tokens rather than the series
+ * colour. Every mark carries a hover tooltip.
  */
 
-const BAR_THICKNESS = 22;
-const BAR_GAP = 10;
+const BAR_THICKNESS = 20;
+const BAR_GAP = 12;
 
 export interface BarDatum {
   label: string;
   value: number;
-  /** Shown in the tooltip under the value. */
   detail?: string;
-  /** Overrides the default single-hue fill. */
   tone?: "lift" | "drag" | "neutral";
 }
 
 interface HorizontalBarsProps {
   data: BarDatum[];
-  /** Formats the value for the direct label and tooltip. */
   format: (value: number) => string;
-  /** Draws a reference line at this value — e.g. 1.0x for "no effect". */
+  /** Reference line, e.g. 1.0x for no effect. */
   baseline?: number;
   labelWidth?: number;
-  /** When set, bars diverge left/right of `baseline` instead of growing from 0. */
-  diverging?: boolean;
 }
 
-export function HorizontalBars({
-  data,
-  format,
-  baseline,
-  labelWidth = 170,
-  diverging = false,
-}: HorizontalBarsProps) {
+export function HorizontalBars({ data, format, baseline, labelWidth = 200 }: HorizontalBarsProps) {
   const [hover, setHover] = useState<number | null>(null);
   const clipId = useId();
 
   if (!data.length) {
-    return <p className="muted py-6 text-sm">Not enough data to chart yet.</p>;
+    return (
+      <p className="muted py-8 text-center text-sm">Not enough data to chart this yet.</p>
+    );
   }
 
-  const plotWidth = 420;
-  const valueGutter = 64;
+  const plotWidth = 400;
+  const valueGutter = 76;
   const width = labelWidth + plotWidth + valueGutter;
   const rowHeight = BAR_THICKNESS + BAR_GAP;
-  const height = data.length * rowHeight + 24;
+  const height = data.length * rowHeight + 26;
 
   const values = data.map((d) => d.value);
 
-  // One extreme value would otherwise flatten every other bar to a stub. Cap
-  // the domain around the bulk of the data and let outliers run to the edge;
-  // their true value still rides the bar as a direct label, so nothing is lost.
+  // One extreme value would flatten every other bar to a stub, so the domain is
+  // capped near the bulk of the data and outliers run to the edge. Their true
+  // value still rides the bar as a label, so nothing is hidden.
   const sorted = [...values].sort((a, b) => a - b);
   const p90 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))];
   const rawMax = Math.max(...values, baseline ?? 0);
   const softMax = Math.max(p90 * 1.35, (baseline ?? 1) * 2);
   const capped = rawMax > softMax * 1.6;
   const max = (capped ? softMax : rawMax) * 1.05;
+  const span = max || 1;
 
-  const min = diverging ? Math.min(...values, 0) : 0;
-  const span = max - min || 1;
-
-  const x = (value: number) =>
-    labelWidth + ((Math.min(Math.max(value, min), max) - min) / span) * plotWidth;
-  const zeroX = x(diverging ? Math.max(min, 0) : 0);
-
-  const ticks = [min, min + span / 2, max];
+  const x = (value: number) => labelWidth + (Math.min(Math.max(value, 0), max) / span) * plotWidth;
+  const ticks = [0, max / 2, max];
 
   return (
-    <div className="scroll-x relative">
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label="Horizontal bar chart"
-        style={{ maxWidth: "100%", minWidth: width }}
-      >
-        <defs>
-          <clipPath id={clipId}>
-            <rect x={labelWidth} y={0} width={plotWidth + 4} height={height} />
-          </clipPath>
-        </defs>
+    <div className="relative">
+      <div className="scroll-x">
+        <svg
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label="Bar chart"
+          style={{ maxWidth: "100%", minWidth: width }}
+        >
+          <defs>
+            <clipPath id={clipId}>
+              <rect x={labelWidth} y={0} width={plotWidth + 4} height={height} />
+            </clipPath>
+          </defs>
 
-        {ticks.map((tick, i) => {
-          // The baseline label wins any collision — it is the one the reader
-          // needs. Drop a tick label rather than let the two overlap.
-          const collides = baseline !== undefined && Math.abs(x(tick) - x(baseline)) < 34;
-          return (
-            <g key={i}>
+          {ticks.map((tick, i) => {
+            const collides = baseline !== undefined && Math.abs(x(tick) - x(baseline)) < 36;
+            return (
+              <g key={i}>
+                <line
+                  x1={x(tick)}
+                  y1={2}
+                  x2={x(tick)}
+                  y2={height - 22}
+                  stroke="var(--line)"
+                  strokeWidth={1}
+                />
+                {!collides && (
+                  <text
+                    x={x(tick)}
+                    y={height - 7}
+                    textAnchor="middle"
+                    fontSize={10.5}
+                    fill="var(--text-muted)"
+                    className="numeric"
+                  >
+                    {format(tick)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+          {/* The reference line carries meaning, so it reads a step stronger
+              than the ordinary gridlines and gets a label. */}
+          {baseline !== undefined && (
+            <>
               <line
-                x1={x(tick)}
-                y1={4}
-                x2={x(tick)}
-                y2={height - 20}
-                stroke="var(--gridline)"
+                x1={x(baseline)}
+                y1={0}
+                x2={x(baseline)}
+                y2={height - 22}
+                stroke="var(--line-strong)"
                 strokeWidth={1}
               />
-              {!collides && (
-                <text
-                  x={x(tick)}
-                  y={height - 6}
-                  textAnchor="middle"
-                  fontSize={11}
-                  fill="var(--text-muted)"
-                  style={{ fontVariantNumeric: "tabular-nums" }}
-                >
-                  {format(tick)}
-                </text>
-              )}
-            </g>
-          );
-        })}
-
-        {/* The reference line carries meaning, so it gets a label and reads a
-            step stronger than the ordinary gridlines. */}
-        {baseline !== undefined && (
-          <>
-            <line
-              x1={x(baseline)}
-              y1={0}
-              x2={x(baseline)}
-              y2={height - 20}
-              stroke="var(--text-muted)"
-              strokeWidth={1}
-            />
-            <text
-              x={x(baseline)}
-              y={height - 6}
-              textAnchor="middle"
-              fontSize={11}
-              fontWeight={500}
-              fill="var(--text-secondary)"
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
-              {format(baseline)}
-            </text>
-          </>
-        )}
-
-        {data.map((datum, i) => {
-          const y = i * rowHeight + 4;
-          const barX = datum.value >= (diverging ? 0 : min) ? zeroX : x(datum.value);
-          const barWidth = Math.max(2, Math.abs(x(datum.value) - zeroX));
-          const grows = datum.value >= (diverging ? 0 : min);
-          const tone =
-            datum.tone === "drag"
-              ? "var(--drag)"
-              : datum.tone === "neutral"
-                ? "var(--baseline)"
-                : "var(--lift)";
-
-          // 4px rounded data-end, square at the baseline.
-          const r = 4;
-          const path = grows
-            ? `M ${barX} ${y} H ${barX + barWidth - r} A ${r} ${r} 0 0 1 ${barX + barWidth} ${y + r} V ${y + BAR_THICKNESS - r} A ${r} ${r} 0 0 1 ${barX + barWidth - r} ${y + BAR_THICKNESS} H ${barX} Z`
-            : `M ${barX + barWidth} ${y} H ${barX + r} A ${r} ${r} 0 0 0 ${barX} ${y + r} V ${y + BAR_THICKNESS - r} A ${r} ${r} 0 0 0 ${barX + r} ${y + BAR_THICKNESS} H ${barX + barWidth} Z`;
-
-          return (
-            <g
-              key={`${datum.label}-${i}`}
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(null)}
-            >
-              {/* Hit target spans the full row so hovering is forgiving. */}
-              <rect x={0} y={y - BAR_GAP / 2} width={width} height={rowHeight} fill="transparent" />
               <text
-                x={labelWidth - 10}
-                y={y + BAR_THICKNESS / 2 + 4}
-                textAnchor="end"
-                fontSize={12}
-                fill={hover === i ? "var(--text-primary)" : "var(--text-secondary)"}
+                x={x(baseline)}
+                y={height - 7}
+                textAnchor="middle"
+                fontSize={10.5}
+                fill="var(--text-secondary)"
+                className="numeric"
               >
-                {truncate(datum.label, 26)}
+                {format(baseline)}
               </text>
-              <g clipPath={`url(#${clipId})`}>
-                <path d={path} fill={tone} opacity={hover === null || hover === i ? 1 : 0.55} />
-              </g>
-              {/* Marks a bar whose true value runs past the capped domain. */}
-              {datum.value > max && (
+            </>
+          )}
+
+          {data.map((datum, i) => {
+            const y = i * rowHeight + 4;
+            const barWidth = Math.max(2, x(datum.value) - x(0));
+            const tone =
+              datum.tone === "drag"
+                ? "var(--data-drag)"
+                : datum.tone === "neutral"
+                  ? "var(--data-neutral)"
+                  : "var(--data-lift)";
+
+            const r = 4;
+            const bx = x(0);
+            const path = `M ${bx} ${y} H ${bx + barWidth - r} A ${r} ${r} 0 0 1 ${bx + barWidth} ${y + r} V ${y + BAR_THICKNESS - r} A ${r} ${r} 0 0 1 ${bx + barWidth - r} ${y + BAR_THICKNESS} H ${bx} Z`;
+            const overflows = datum.value > max;
+            const focused = hover === null || hover === i;
+
+            return (
+              <g
+                key={`${datum.label}-${i}`}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+              >
+                <rect x={0} y={y - BAR_GAP / 2} width={width} height={rowHeight} fill="transparent" />
                 <text
-                  x={barX + barWidth + 3}
+                  x={labelWidth - 14}
+                  y={y + BAR_THICKNESS / 2 + 4}
+                  textAnchor="end"
+                  fontSize={12.5}
+                  fill={hover === i ? "var(--text-primary)" : "var(--text-secondary)"}
+                  style={{ transition: "fill 0.15s ease" }}
+                >
+                  {truncate(datum.label, 28)}
+                </text>
+                <g clipPath={`url(#${clipId})`}>
+                  <path
+                    d={path}
+                    fill={tone}
+                    opacity={focused ? 1 : 0.42}
+                    style={{ transition: "opacity 0.15s ease" }}
+                  />
+                </g>
+                {overflows && (
+                  <text
+                    x={bx + barWidth + 4}
+                    y={y + BAR_THICKNESS / 2 + 4}
+                    fontSize={11}
+                    fill={tone}
+                    aria-hidden="true"
+                  >
+                    ▸
+                  </text>
+                )}
+                <text
+                  x={bx + barWidth + (overflows ? 20 : 10)}
                   y={y + BAR_THICKNESS / 2 + 4}
                   fontSize={12}
-                  fill={tone}
-                  aria-hidden="true"
+                  fill="var(--text-secondary)"
+                  className="numeric"
                 >
-                  ▸
+                  {format(datum.value)}
                 </text>
-              )}
-              <text
-                x={grows ? barX + barWidth + (datum.value > max ? 20 : 8) : barX - 8}
-                y={y + BAR_THICKNESS / 2 + 4}
-                textAnchor={grows ? "start" : "end"}
-                fontSize={12}
-                fill="var(--text-secondary)"
-                style={{ fontVariantNumeric: "tabular-nums" }}
-              >
-                {format(datum.value)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       {capped && (
-        <p className="muted mt-2 text-xs">
-          ▸ marks a bar running past the axis — one extreme value would otherwise flatten the rest.
-          The number beside each bar is always the true value.
+        <p className="muted mt-3 text-xs">
+          The arrow marks a bar running past the axis. One extreme value would otherwise flatten
+          the rest. Numbers beside each bar are always the true value.
         </p>
       )}
 
       {hover !== null && data[hover].detail && (
         <div
-          className="card pointer-events-none absolute left-0 px-3 py-2 text-xs shadow-lg"
-          style={{ top: hover * rowHeight + 30, maxWidth: 320 }}
+          className="panel-raised pointer-events-none absolute left-0 z-10 px-3 py-2 text-xs"
+          style={{ top: hover * rowHeight + 34, maxWidth: 340 }}
         >
           <div className="font-medium">{data[hover].label}</div>
-          <div className="muted mt-0.5">{data[hover].detail}</div>
+          <div className="muted mt-1">{data[hover].detail}</div>
         </div>
       )}
     </div>
   );
 }
 
-export interface StatTileProps {
+/**
+ * A metric with no container. Cards are reserved for things that genuinely sit
+ * on their own plane; a row of numbers reads better separated by rule and space.
+ */
+export function Stat({
+  label,
+  value,
+  detail,
+}: {
   label: string;
   value: string;
   detail?: string;
-  /** Signed change with a named comparison period. */
-  delta?: { text: string; good: boolean };
-}
-
-export function StatTile({ label, value, detail, delta }: StatTileProps) {
+}) {
   return (
-    <div className="card px-4 py-3.5">
-      <div className="muted text-[11px] font-medium uppercase tracking-wide">{label}</div>
-      <div className="mt-1.5 text-[26px] font-semibold leading-none">{value}</div>
-      {(detail || delta) && (
-        <div className="mt-1.5 flex items-baseline gap-2 text-xs">
-          {delta && (
-            <span style={{ color: delta.good ? "var(--good)" : "var(--critical)" }}>
-              {delta.text}
-            </span>
-          )}
-          {detail && <span className="muted">{detail}</span>}
-        </div>
-      )}
+    <div className="py-1">
+      <div className="muted text-[11.5px] font-medium">{label}</div>
+      <div className="numeric mt-1.5 text-[25px] leading-none font-medium tracking-[-0.02em]">
+        {value}
+      </div>
+      {detail && <div className="muted mt-1.5 text-[11.5px]">{detail}</div>}
     </div>
   );
 }
@@ -268,32 +251,13 @@ export function HeroFigure({
   sub?: string;
 }) {
   return (
-    <div className="card px-6 py-6">
-      <div className="muted text-[11px] font-medium uppercase tracking-wide">{label}</div>
-      <div className="mt-2 text-[52px] font-semibold leading-none tracking-tight">{value}</div>
-      {sub && <div className="secondary mt-2 text-sm">{sub}</div>}
+    <div>
+      <div className="muted text-[11.5px] font-medium">{label}</div>
+      <div className="numeric mt-3 text-[64px] leading-[0.9] font-medium tracking-[-0.045em]">
+        {value}
+      </div>
+      {sub && <p className="secondary mt-4 max-w-[42ch] text-[13.5px] leading-relaxed">{sub}</p>}
     </div>
-  );
-}
-
-/** 12-point sparkline for a stat tile. De-emphasised hue, accented endpoint. */
-export function Sparkline({ values, width = 96, height = 26 }: { values: number[]; width?: number; height?: number }) {
-  if (values.length < 2) return null;
-
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const span = max - min || 1;
-  const step = width / (values.length - 1);
-
-  const points = values.map((value, i) => [i * step, height - ((value - min) / span) * (height - 6) - 3]);
-  const path = points.map(([px, py], i) => `${i === 0 ? "M" : "L"} ${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
-  const [lastX, lastY] = points[points.length - 1];
-
-  return (
-    <svg width={width} height={height} aria-hidden="true">
-      <path d={path} fill="none" stroke="var(--baseline)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={lastX} cy={lastY} r={4} fill="var(--lift)" stroke="var(--surface-1)" strokeWidth={2} />
-    </svg>
   );
 }
 

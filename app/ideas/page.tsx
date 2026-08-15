@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowRightIcon, MusicNotesIcon } from "@phosphor-icons/react";
+import { SkeletonRows } from "@/components/ui";
 import type { HookIdea } from "@/lib/types";
 
 export default function IdeasPage() {
@@ -34,22 +36,22 @@ export default function IdeasPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Hook ideas</h1>
-        <p className="secondary mt-1 max-w-2xl text-sm">
-          Hooks generated from your measured patterns — the archetypes, subjects, sounds and formats
-          that actually over-perform on your account. Every idea comes with the evidence behind it.
+    <div className="space-y-10">
+      <header>
+        <h1 className="text-[34px] leading-[1.08] font-medium tracking-[-0.035em]">Hook ideas</h1>
+        <p className="secondary mt-3 max-w-[64ch] text-[14px] leading-relaxed">
+          Written from your measured patterns: the archetypes, subjects, sounds and formats that
+          over-perform on your account. Every idea carries the evidence behind it.
         </p>
-      </div>
+      </header>
 
-      <div className="card flex flex-wrap items-end gap-4 px-5 py-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="muted text-xs font-medium uppercase tracking-wide">How many</span>
+      <div className="panel flex flex-wrap items-end gap-5 px-5 py-5">
+        <label className="flex flex-col gap-2">
+          <span className="muted text-[11.5px] font-medium">How many</span>
           <select
             value={count}
             onChange={(e) => setCount(Number(e.target.value))}
-            className="px-3 py-2 text-sm"
+            className="numeric px-3 py-2.5 text-[13.5px]"
           >
             {[5, 6, 7, 8, 9, 10].map((n) => (
               <option key={n} value={n}>
@@ -59,44 +61,45 @@ export default function IdeasPage() {
           </select>
         </label>
 
-        <label className="flex min-w-[260px] flex-1 flex-col gap-1.5 text-sm">
-          <span className="muted text-xs font-medium uppercase tracking-wide">
-            Focus (optional)
-          </span>
+        <label className="flex min-w-[280px] flex-1 flex-col gap-2">
+          <span className="muted text-[11.5px] font-medium">Focus, optional</span>
           <input
             value={steer}
             onChange={(e) => setSteer(e.target.value)}
-            placeholder="e.g. slideshows about pricing mistakes"
-            className="px-3 py-2 text-sm"
+            placeholder="slideshows about pricing mistakes"
+            className="px-3 py-2.5 text-[13.5px]"
           />
         </label>
 
         <button
           onClick={() => void generate()}
           disabled={busy}
-          className="rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          style={{ background: "var(--lift)" }}
+          className="rounded-[8px] px-5 py-2.5 text-[13.5px] font-medium disabled:opacity-50"
+          style={{ background: "var(--accent)", color: "var(--on-accent)" }}
         >
-          {busy ? "Thinking…" : "Generate hooks"}
+          {busy ? "Writing" : "Generate hooks"}
         </button>
       </div>
 
-      {note && <p className="muted text-sm">{note}</p>}
+      {note && <p className="muted text-[13px]">{note}</p>}
 
       {error && (
         <div
-          className="card px-4 py-3 text-sm"
-          style={{ borderColor: "var(--critical)", color: "var(--critical)" }}
+          className="rounded-[10px] px-4 py-3.5 text-[13px]"
+          style={{ background: "var(--surface-sunken)", borderLeft: "2px solid var(--data-drag)" }}
         >
-          {error}
+          <span className="font-medium">Generation failed.</span>{" "}
+          <span className="secondary">{error}</span>
         </div>
       )}
 
       {busy && ideas.length === 0 && (
-        <p className="secondary text-sm">
-          Reading your top posts and measured lifts, then writing hooks against them. This takes
-          around 30 seconds.
-        </p>
+        <div className="space-y-4">
+          <p className="secondary text-[13.5px]">
+            Reading your top posts and measured lifts, then writing against them. Around 30 seconds.
+          </p>
+          <SkeletonRows rows={4} />
+        </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -110,53 +113,56 @@ export default function IdeasPage() {
 
 function IdeaCard({ idea }: { idea: HookIdea }) {
   return (
-    <article className="card flex flex-col gap-3 px-5 py-4">
-      <header className="flex items-start justify-between gap-4">
-        <p className="text-[15px] font-semibold leading-snug">{idea.hook}</p>
+    <article className="panel flex h-full flex-col gap-4 px-5 py-5">
+      <header className="flex items-start justify-between gap-5">
+        <p className="text-[15.5px] leading-snug font-medium">{idea.hook}</p>
         <div className="shrink-0 text-right">
-          <div className="text-lg font-semibold leading-none">{idea.confidence}</div>
-          <div className="muted mt-0.5 text-[10px] uppercase tracking-wide">confidence</div>
+          <div className="numeric text-[19px] leading-none font-medium">{idea.confidence}</div>
+          <div className="muted mt-1.5 text-[10.5px]">confidence</div>
         </div>
       </header>
 
-      <div className="muted flex flex-wrap gap-2 text-xs">
+      <div className="flex flex-wrap gap-2">
         <Chip>{idea.format}</Chip>
         <Chip>{idea.angle}</Chip>
       </div>
 
-      <p className="secondary text-sm leading-relaxed">{idea.rationale}</p>
+      <p className="secondary text-[13.5px] leading-relaxed">{idea.rationale}</p>
 
       {idea.evidence.length > 0 && (
-        <div>
-          <p className="muted text-[11px] font-medium uppercase tracking-wide">Evidence</p>
-          <ul className="mt-1.5 space-y-1 text-xs">
+        <div className="border-t pt-4" style={{ borderColor: "var(--line)" }}>
+          <p className="muted text-[11px] font-medium">Evidence</p>
+          <ul className="mt-2.5 space-y-2">
             {idea.evidence.map((line, i) => (
-              <li key={i} className="secondary flex gap-2">
-                <span
-                  aria-hidden="true"
-                  className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ background: "var(--lift)" }}
-                />
-                <span>{line}</span>
+              <li key={i} className="secondary text-[12.5px] leading-relaxed">
+                {line}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="muted text-xs">
-          {idea.suggestedHashtags.slice(0, 6).map((tag) => `#${tag.replace(/^#/, "")}`).join(" ")}
+      <footer
+        className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t pt-4"
+        style={{ borderColor: "var(--line)" }}
+      >
+        <div className="muted min-w-0 flex-1 text-[11.5px]">
+          <div className="truncate">
+            {idea.suggestedHashtags.slice(0, 5).map((t) => `#${t.replace(/^#/, "")}`).join(" ")}
+          </div>
           {idea.suggestedSounds.length > 0 && (
-            <span className="ml-2">♪ {idea.suggestedSounds.slice(0, 2).join(", ")}</span>
+            <div className="mt-1 flex items-center gap-1.5 truncate">
+              <MusicNotesIcon size={11} weight="fill" />
+              {idea.suggestedSounds.slice(0, 2).join(", ")}
+            </div>
           )}
         </div>
         <Link
           href={`/studio?hook=${encodeURIComponent(idea.hook)}`}
-          className="rounded-lg border px-3 py-1.5 text-xs font-medium"
-          style={{ borderColor: "var(--border)" }}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-[8px] px-3 py-2 text-[12.5px] font-medium whitespace-nowrap"
+          style={{ border: "1px solid var(--line-strong)" }}
         >
-          Build the slideshow →
+          Build it <ArrowRightIcon size={12} weight="bold" />
         </Link>
       </footer>
     </article>
@@ -166,8 +172,8 @@ function IdeaCard({ idea }: { idea: HookIdea }) {
 function Chip({ children }: { children: React.ReactNode }) {
   return (
     <span
-      className="rounded-full px-2.5 py-1"
-      style={{ background: "var(--neutral)", color: "var(--text-secondary)" }}
+      className="rounded-full px-2.5 py-1 text-[11.5px]"
+      style={{ background: "var(--surface-sunken)", color: "var(--text-secondary)" }}
     >
       {children}
     </span>

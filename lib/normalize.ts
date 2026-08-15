@@ -100,7 +100,7 @@ const ALIASES: Record<string, string[]> = {
 /**
  * Values that mean something for the `format` field. Scrapers also expose a
  * `videoMeta.format` holding the container ("mp4"), which is not what we mean
- * — without this guard it would claim the slot and tell us nothing.
+ *, without this guard it would claim the slot and tell us nothing.
  */
 const FORMAT_VALUE_PATTERN = /photo|image|slide|carousel|video|reel|story/i;
 
@@ -211,7 +211,7 @@ export function inferMapping(records: Rec[]): FieldMapping {
       const aliasIdx = lastIdx === -1 ? wholeIdx : lastIdx;
       const fillRate = count / sample.length;
       let score = (aliases.length - aliasIdx) * 10 + fillRate * 5;
-      // Prefer shallow keys — `id` beats `authorMeta.id`.
+      // Prefer shallow keys, `id` beats `authorMeta.id`.
       score -= (segments.length - 1) * 2;
 
       if (NUMERIC_FIELDS.has(field)) {
@@ -245,7 +245,7 @@ export function coerceNumber(value: unknown): number | null {
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
-    // Handles "1.2M", "45.3K", "1,234" — common in dashboard exports.
+    // Handles "1.2M", "45.3K", "1,234", common in dashboard exports.
     const match = trimmed.match(/^([\d,.]+)\s*([kmb])?$/i);
     if (match) {
       const base = Number(match[1].replace(/,/g, ""));
@@ -344,7 +344,7 @@ function detectFormat(
 
 /**
  * Slide count is rarely a plain number in the wild. Scrapers ship the per-slide
- * image URLs as an array, and its length is the slide count — so when no
+ * image URLs as an array, and its length is the slide count, so when no
  * numeric field mapped, fall back to counting that array.
  */
 function deriveSlideCount(flat: Rec, mapped: number | null): number | null {
@@ -468,7 +468,7 @@ export function ingest(files: IngestInput[], mappingOverride?: FieldMapping): Da
       throw new Error(`No records found in ${file.filename}`);
     }
 
-    // Comment exports and post exports can be dropped in together — they are
+    // Comment exports and post exports can be dropped in together, they are
     // told apart by shape, so the user never has to say which is which.
     if (looksLikeComments(records)) {
       commentRecords.push(...records);

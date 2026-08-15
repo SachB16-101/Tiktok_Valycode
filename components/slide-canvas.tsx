@@ -4,8 +4,7 @@ import { useEffect, useRef } from "react";
 import type { Slide } from "@/lib/types";
 
 /**
- * Renders one slide to a 1080×1920 canvas — TikTok's native photo-post size —
- * so what you preview is exactly what exports. Background images are drawn
+ * Renders one slide to a 1080×1920 canvas, TikTok's native photo-post size, * so what you preview is exactly what exports. Background images are drawn
  * cover-fit under a scrim so burned-in text stays legible over any photo.
  */
 
@@ -133,7 +132,7 @@ export function drawSlide(
     }
   }
 
-  // Slide counter, bottom right — orients the viewer inside the swipe.
+  // Slide counter, bottom right, orients the viewer inside the swipe.
   ctx.font = `500 ${Math.round(34 * style.fontScale)}px system-ui, sans-serif`;
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.textAlign = "right";

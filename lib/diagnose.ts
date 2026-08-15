@@ -7,11 +7,11 @@ import type { EnrichedPost, PatternFinding } from "./types";
  * Everything here exists to stop the pattern miner from being confidently
  * wrong. Three failure modes it guards against:
  *
- *  1. Age bias — older posts have had longer to accumulate views, so a naive
+ *  1. Age bias, older posts have had longer to accumulate views, so a naive
  *     comparison flatters your back catalogue and buries recent work.
- *  2. Confounding — one-feature-at-a-time testing reports a single underlying
+ *  2. Confounding, one-feature-at-a-time testing reports a single underlying
  *     effect several times over, so you change the wrong thing.
- *  3. Conflating reach with resonance — a post can fail because nobody saw it
+ *  3. Conflating reach with resonance, a post can fail because nobody saw it
  *     or because everybody who saw it bounced. Those need opposite fixes.
  */
 
@@ -92,12 +92,12 @@ export function assessAgeBias(posts: EnrichedPost[], now = Date.now()): AgeBiasR
       "Post age barely predicts views here, so comparing old and new posts directly is safe.";
   } else if (correlation > 0) {
     note =
-      "Older posts out-perform newer ones. Some of that is simply more time to accumulate views — " +
+      "Older posts out-perform newer ones. Some of that is simply more time to accumulate views, " +
       "recent work is being judged before it has finished performing. Age-adjusted scores correct for this.";
   } else {
     note =
       "Newer posts out-perform older ones even though they have had less time to accumulate. " +
-      "That is a real improvement in the work, not an artefact — and it means old posts drag your baseline down.";
+      "That is a real improvement in the work, not an artefact, and it means old posts drag your baseline down.";
   }
 
   return { correlation, material, medianAgeDays, note };
@@ -122,7 +122,7 @@ export function ageAdjustedMultiples(
     return out;
   }
 
-  // Quartile cohorts by age. Coarse on purpose — finer bands would just fit
+  // Quartile cohorts by age. Coarse on purpose, finer bands would just fit
   // noise on the few hundred posts a creator account actually has.
   const byAge = [...dated].sort(
     (a, b) => (now - (b.createdAt as number)) - (now - (a.createdAt as number)),
@@ -160,7 +160,7 @@ export interface ConfoundPair {
 /**
  * Finds pairs of findings whose posts substantially coincide. When two
  * "separate" effects sit on largely the same posts, they are one effect
- * wearing two hats — and acting on both is acting twice on a guess.
+ * wearing two hats, and acting on both is acting twice on a guess.
  */
 export function findConfounds(
   findings: PatternFinding[],
@@ -214,7 +214,7 @@ export interface PostDiagnosis {
 const DIAGNOSIS_COPY: Record<Diagnosis, { label: string; advice: string }> = {
   winner: {
     label: "Reached and resonated",
-    advice: "Both halves worked. This is the template — mine it for what to repeat.",
+    advice: "Both halves worked. This is the template, mine it for what to repeat.",
   },
   "distribution-failure": {
     label: "Good content, few saw it",
@@ -299,15 +299,15 @@ export function summariseDiagnoses(diagnoses: Map<string, PostDiagnosis>): Diagn
   if (distribution > content * 1.5 && distribution > 0.15) {
     headline =
       `Your bottleneck is distribution. ${counts["distribution-failure"]} posts held the audience they ` +
-      "reached but were never pushed — the content is working and the packaging is not. Hooks, opening " +
+      "reached but were never pushed, the content is working and the packaging is not. Hooks, opening " +
       "frames and tags are where the gain is.";
   } else if (content > distribution * 1.5 && content > 0.15) {
     headline =
-      `Your bottleneck is the payoff. ${counts["content-failure"]} posts earned reach and then lost people — ` +
+      `Your bottleneck is the payoff. ${counts["content-failure"]} posts earned reach and then lost people, ` +
       "your hooks are writing cheques the rest of the post is not cashing. Fix what comes after slide one.";
   } else {
     headline =
-      "Reach and retention fail at roughly the same rate, so there is no single bottleneck — " +
+      "Reach and retention fail at roughly the same rate, so there is no single bottleneck, " +
       "the gains here come from repeating what your winners do rather than patching one weakness.";
   }
 
@@ -327,7 +327,7 @@ export interface ReplicatedFinding {
   medianLift: number;
   /**
    * The contributing lift closest to 1.0. A replication is only as strong as
-   * its weakest account, so this is what the ranking is built on — a 35x on one
+   * its weakest account, so this is what the ranking is built on, a 35x on one
    * account beside a 1.15x on another is a fluke with a witness, not a pattern.
    */
   weakestLift: number;

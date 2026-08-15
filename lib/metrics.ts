@@ -166,11 +166,11 @@ export interface DatasetSummary {
   medianEngagementRate: number | null;
   slideshowShare: number | null;
   dateRange: [number, number] | null;
-  /** Fields with no data at all — surfaced so the user knows what's missing. */
+  /** Fields with no data at all, surfaced so the user knows what's missing. */
   missingFields: string[];
   /**
    * Share of posts whose caption is nothing but hashtags. On these the hook
-   * lives on the first image, which no export contains — so hook analysis
+   * lives on the first image, which no export contains, so hook analysis
    * covers only the remainder, and the dashboard says so.
    */
   captionlessShare: number;
@@ -220,7 +220,7 @@ export function summarise(posts: EnrichedPost[]): DatasetSummary {
 }
 
 export function formatCount(value: number | null | undefined): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
   const abs = Math.abs(value);
   if (abs >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (abs >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -229,11 +229,11 @@ export function formatCount(value: number | null | undefined): string {
 }
 
 export function formatPercent(value: number | null | undefined, digits = 1): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
   return `${(value * 100).toFixed(digits)}%`;
 }
 
 export function formatMultiple(value: number | null | undefined): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
   return `${value.toFixed(1)}×`;
 }

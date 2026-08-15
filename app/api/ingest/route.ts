@@ -9,7 +9,7 @@ export const maxDuration = 60;
 interface IngestBody {
   files: { filename: string; body: string }[];
   mapping?: FieldMapping;
-  /** When true, only infer the mapping and return a preview — do not save. */
+  /** When true, only infer the mapping and return a preview, do not save. */
   previewOnly?: boolean;
 }
 

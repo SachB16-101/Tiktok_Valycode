@@ -5,21 +5,21 @@ import type { EnrichedPost, PatternFinding } from "./types";
 /**
  * Pattern mining.
  *
- * For every feature a post can carry — a hashtag, a sound, a format, a hook
- * archetype, a caption length band, a posting hour — we compare the posts that
+ * For every feature a post can carry, a hashtag, a sound, a format, a hook
+ * archetype, a caption length band, a posting hour, we compare the posts that
  * have it against the posts that don't, and ask whether the difference in
  * performance is bigger than chance would explain.
  *
  * The comparison uses median outlier-multiple (views ÷ account median views)
  * rather than raw views, so a 400k-view post on a big account and a 40k-view
  * post on a small one are judged on the same scale. Significance comes from a
- * Mann–Whitney U rank-sum test, which makes no assumption that view counts are
- * normally distributed — they emphatically are not.
+ * Mann-Whitney U rank-sum test, which makes no assumption that view counts are
+ * normally distributed, they emphatically are not.
  */
 
 /**
  * Five is the floor at which a group can say anything. At three, a single
- * runaway post drags its whole hashtag to an absurd lift — real accounts have
+ * runaway post drags its whole hashtag to an absurd lift, real accounts have
  * one 5M-view fluke among 1.6K-view typical posts, and every tag on that post
  * would otherwise be reported as a 500x winner.
  */
@@ -38,7 +38,7 @@ export function reliableLift(lift: number, n: number): number {
   return 1 + (lift - 1) * (n / (n + SHRINKAGE_K));
 }
 
-/** Normal CDF via Abramowitz & Stegun 7.1.26 — good to ~1e-7. */
+/** Normal CDF via Abramowitz & Stegun 7.1.26, good to ~1e-7. */
 function normalCdf(z: number): number {
   const sign = z < 0 ? -1 : 1;
   const x = Math.abs(z) / Math.SQRT2;
@@ -52,7 +52,7 @@ function normalCdf(z: number): number {
 }
 
 /**
- * Two-sided Mann–Whitney U with a normal approximation and tie correction.
+ * Two-sided Mann-Whitney U with a normal approximation and tie correction.
  * Returns 1 (no evidence) when either group is too small to say anything.
  */
 export function rankSumPValue(groupA: number[], groupB: number[]): number {
@@ -304,7 +304,7 @@ export function explainPost(
 }
 
 export function confidenceLabel(pValue: number, n: number): string {
-  if (n < 5) return "Weak — small sample";
+  if (n < 5) return "Weak, small sample";
   if (pValue <= 0.01) return "Strong";
   if (pValue <= 0.05) return "Solid";
   if (pValue <= 0.1) return "Suggestive";

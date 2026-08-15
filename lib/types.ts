@@ -101,7 +101,7 @@ export interface Comment {
   isReply: boolean;
 }
 
-/** A question or request in the comments — a content idea with proven demand. */
+/** A question or request in the comments, a content idea with proven demand. */
 export interface DemandSignal {
   text: string;
   intent: "question" | "request";

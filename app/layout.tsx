@@ -1,49 +1,29 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Nav } from "@/components/nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Valycode — TikTok performance studio",
+  title: "Valycode",
   description:
-    "Turn your TikTok export into a performance dashboard, viral hook ideas, and finished slideshows.",
+    "Turn a TikTok export into a performance dashboard, hook ideas, and finished slideshows.",
 };
-
-const NAV = [
-  { href: "/", label: "Dashboard" },
-  { href: "/posts", label: "Posts" },
-  { href: "/patterns", label: "Patterns" },
-  { href: "/audience", label: "Audience" },
-  { href: "/ideas", label: "Hook ideas" },
-  { href: "/studio", label: "Slideshow studio" },
-  { href: "/ingest", label: "Data" },
-];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Applies the stored theme before first paint so there is no flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>
-        <header
-          className="sticky top-0 z-10 backdrop-blur"
-          style={{ background: "color-mix(in srgb, var(--page) 88%, transparent)", borderBottom: "1px solid var(--border)" }}
-        >
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
-            <Link href="/" className="text-[15px] font-semibold tracking-tight">
-              Valycode
-            </Link>
-            <nav className="flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="secondary transition-colors hover:text-[var(--text-primary)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </header>
-        <main className="mx-auto max-w-7xl px-5 py-8">{children}</main>
+        <Nav />
+        <main className="mx-auto w-full max-w-[1240px] px-6 pb-28 pt-10 lg:px-10">{children}</main>
       </body>
     </html>
   );

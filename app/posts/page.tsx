@@ -55,7 +55,7 @@ export default async function PostsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">All posts</h1>
+        <h1 className="text-[34px] leading-[1.08] font-medium tracking-[-0.035em]">All posts</h1>
         <p className="secondary mt-1 text-sm">
           {rows.length.toLocaleString()} posts. Sort any column; the multiple compares each post to
           your own account median rather than to some global benchmark.

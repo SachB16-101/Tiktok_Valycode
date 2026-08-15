@@ -22,58 +22,55 @@ const DIMENSION_LABELS: Record<string, string> = {
 };
 
 /**
- * Lift is a diverging measure around 1.0 — above is a boost, below is a drag —
- * so the bars use the validated blue/red diverging pair with a reference line
- * at the neutral point.
+ * Lift is a diverging measure around 1.0, so the bars use the two data
+ * semantics with a reference line at the neutral point. The colours here are
+ * validated for colour vision deficiency; they are data encoding, not brand.
  */
 export function PatternBars({ findings }: { findings: PatternFinding[] }) {
   if (!findings.length) {
     return (
-      <p className="muted py-4 text-sm">
-        No statistically distinguishable patterns yet. This usually means the dataset is small —
-        around 30+ posts is where effects start separating from noise.
+      <p className="secondary max-w-[62ch] text-[13.5px] leading-relaxed">
+        Nothing here clears significance yet. That usually means the dataset is small. Patterns
+        start separating from noise at around 30 posts per account.
       </p>
     );
   }
 
-  // Findings arrive ranked by reliability-adjusted lift, which is the right way
-  // to choose *which* ones to show. Within the chart, order by the number
-  // actually printed on each bar so the bars read monotonically.
+  // Findings arrive ranked by reliability. Within the chart, order by the number
+  // printed on each bar so the bars read monotonically.
   const ordered = [...findings].sort((a, b) => b.lift - a.lift);
 
   const data: BarDatum[] = ordered.map((finding) => ({
     label: `${DIMENSION_LABELS[finding.dimension] ?? finding.dimension}: ${finding.label}`,
     value: finding.lift,
     tone: finding.lift >= 1 ? "lift" : "drag",
-    detail: [
-      `${finding.n} posts · median ${formatCount(finding.medianViews)} views`,
-      `${confidenceLabel(finding.pValue, finding.n)} confidence (p = ${finding.pValue.toFixed(3)})`,
-    ].join(" · "),
+    detail: `${finding.n} posts, median ${formatCount(finding.medianViews)} views. ${confidenceLabel(
+      finding.pValue,
+      finding.n,
+    )} confidence at p = ${finding.pValue.toFixed(3)}.`,
   }));
+
+  const hasLift = ordered.some((f) => f.lift >= 1);
+  const hasDrag = ordered.some((f) => f.lift < 1);
 
   return (
     <>
-      <HorizontalBars
-        data={data}
-        format={(v) => `${v.toFixed(2)}×`}
-        baseline={1}
-        labelWidth={210}
-      />
-      <div className="mt-3 flex flex-wrap gap-4 text-xs">
-        {findings.some((f) => f.lift >= 1) && <LegendKey color="var(--lift)" label="Over-performs" />}
-        {findings.some((f) => f.lift < 1) && <LegendKey color="var(--drag)" label="Under-performs" />}
-        <span className="muted">Reference line at 1.00× = no measurable effect</span>
+      <HorizontalBars data={data} format={(v) => `${v.toFixed(2)}×`} baseline={1} labelWidth={210} />
+      <div className="muted mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px]">
+        {hasLift && <Key color="var(--data-lift)" label="Over-performs" />}
+        {hasDrag && <Key color="var(--data-drag)" label="Under-performs" />}
+        <span>Reference line at 1.00× is no measurable effect</span>
       </div>
     </>
   );
 }
 
-function LegendKey({ color, label }: { color: string; label: string }) {
+function Key({ color, label }: { color: string; label: string }) {
   return (
-    <span className="secondary flex items-center gap-1.5">
+    <span className="secondary flex items-center gap-2">
       <span
         aria-hidden="true"
-        className="inline-block h-2.5 w-2.5 rounded-sm"
+        className="inline-block h-2 w-2.5 rounded-[2px]"
         style={{ background: color }}
       />
       {label}

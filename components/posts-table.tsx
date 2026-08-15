@@ -76,10 +76,10 @@ export function PostsTable({ rows }: { rows: PostRow[] }) {
         <span className="muted text-xs">{filtered.length.toLocaleString()} shown</span>
       </div>
 
-      <div className="card scroll-x">
+      <div className="panel scroll-x">
         <table className="w-full min-w-[880px] text-sm">
           <thead>
-            <tr className="muted text-left text-xs uppercase tracking-wide">
+            <tr className="muted text-left text-[11px]">
               <th className="px-4 py-2.5 font-medium">Hook</th>
               {COLUMNS.map((column) => (
                 <th key={column.key} className="px-3 py-2.5 text-right font-medium">
@@ -96,7 +96,7 @@ export function PostsTable({ rows }: { rows: PostRow[] }) {
           </thead>
           <tbody>
             {filtered.map((row) => (
-              <tr key={row.id} style={{ borderTop: "1px solid var(--border)" }}>
+              <tr key={row.id} style={{ borderTop: "1px solid var(--line)" }}>
                 <td className="max-w-[360px] px-4 py-3">
                   <div className="truncate font-medium">
                     {row.url ? (
@@ -108,7 +108,7 @@ export function PostsTable({ rows }: { rows: PostRow[] }) {
                     )}
                   </div>
                   <div className="muted mt-0.5 truncate text-xs">
-                    {row.format === "photo" ? "Slideshow" : row.format === "video" ? "Video" : "—"}
+                    {row.format === "photo" ? "Slideshow" : row.format === "video" ? "Video" : "-"}
                     {row.slideCount ? ` · ${row.slideCount} slides` : ""}
                     {row.reasons.length > 0 && ` · ${row.reasons.join(", ")}`}
                   </div>
@@ -119,7 +119,7 @@ export function PostsTable({ rows }: { rows: PostRow[] }) {
                 <Cell>{formatCount(row.saves)}</Cell>
                 <Cell>{row.score}</Cell>
                 <Cell>
-                  {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—"}
+                  {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-"}
                 </Cell>
               </tr>
             ))}

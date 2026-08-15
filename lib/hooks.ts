@@ -1,7 +1,7 @@
 /**
  * Hook extraction and archetype classification.
  *
- * A "hook" is the first thing a viewer reads — for slideshows that is the text
+ * A "hook" is the first thing a viewer reads, for slideshows that is the text
  * on slide one, which in practice is mirrored in the caption's opening line.
  * We classify hooks into archetypes so we can measure which *kinds* of opening
  * travel for this account, not just which exact words did.
@@ -27,7 +27,7 @@ export const ARCHETYPES: HookArchetype[] = [
   {
     id: "listicle",
     label: "Numbered list",
-    description: "Promises a countable payload — '5 things', '3 ways'.",
+    description: "Promises a countable payload, '5 things', '3 ways'.",
     test: (h) => NUMBER_OPENER.test(h) || /\b\d+\s+(things|ways|tips|reasons|signs|steps|rules|mistakes|hacks)\b/i.test(h),
   },
   {
@@ -95,7 +95,7 @@ export function extractHook(caption: string): string {
     .trim();
 
   // A caption made entirely of hashtags carries no hook. Say so rather than
-  // passing the tag string off as one — on slideshow-heavy accounts the real
+  // passing the tag string off as one, on slideshow-heavy accounts the real
   // hook is burned onto the first image and simply is not in the export.
   if (!source) return "";
 

@@ -10,7 +10,8 @@
     "pretest": "tsc -p tsconfig.test.json",
     "test": "node --test tests/*.test.mjs",
     "setup": "node scripts/setup.mjs",
-    "setup:check": "node scripts/setup.mjs check"
+    "setup:check": "node scripts/setup.mjs check",
+    "blueprint": "node blueprint/scripts/serve.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

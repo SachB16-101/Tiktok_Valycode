@@ -127,3 +127,16 @@ components/        charts, slide canvas, tables
 
 Data lives in `./data` as JSON. It is gitignored and never leaves your machine
 except for the evidence brief sent to the Anthropic API during generation.
+
+## Blueprint
+
+A second app lives in `blueprint/`: an offline, installable habit tracker for
+health and appearance that grades its own evidence and turns the unproven half
+into trials with locked baselines. It shares no code with Valycode and needs no
+build step.
+
+```bash
+npm run blueprint     # http://localhost:4321
+```
+
+See `blueprint/README.md`.

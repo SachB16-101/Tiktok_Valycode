@@ -1,0 +1,27 @@
+{
+  "benchmark": "VOO",
+  "universe": {
+    "BOTZ": "Global X Robotics & AI ETF",
+    "IONQ": "IonQ (quantum computing)",
+    "QBTS": "D-Wave Quantum",
+    "QTUM": "Defiance Quantum ETF",
+    "RGTI": "Rigetti Computing (quantum)",
+    "ROBO": "ROBO Global Robotics & Automation ETF",
+    "TQQQ": "ProShares UltraPro QQQ (3x leveraged Nasdaq-100)",
+    "TSLA": "Tesla",
+    "UPRO": "ProShares UltraPro S&P 500 (3x leveraged)",
+    "VOO": "Vanguard S&P 500 ETF (benchmark)"
+  },
+  "portfolios": [
+    { "id": "p100", "name": "£100", "monthly_gbp": 100 },
+    { "id": "p500", "name": "£500", "monthly_gbp": 500 },
+    { "id": "p1000", "name": "£1,000", "monthly_gbp": 1000 }
+  ],
+  "fees": {
+    "fx_fee_pct": 0.15,
+    "commission_gbp": 0,
+    "min_order_usd": 1
+  },
+  "non_fractionable": [],
+  "vault_subfolder": "Finances/Investments/Paper Trading"
+}

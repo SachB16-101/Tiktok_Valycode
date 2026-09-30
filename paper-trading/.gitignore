@@ -1,0 +1,4 @@
+.env
+local-vault/
+__pycache__/
+*.pyc

@@ -1,0 +1,9 @@
+{
+  "_comment": "Demo prices only. Use with PTRADE_OFFLINE_PRICES=sample/offline-prices.json to try the app without API keys.",
+  "fx_gbpusd": 1.34,
+  "prices": {
+    "VOO": 598.20, "TSLA": 441.70, "BOTZ": 34.10, "ROBO": 66.40, "IONQ": 71.30,
+    "RGTI": 33.80, "QBTS": 27.60, "QTUM": 104.90, "TQQQ": 102.40, "UPRO": 109.80
+  },
+  "non_fractionable": ["TQQQ", "UPRO", "RGTI", "QBTS"]
+}

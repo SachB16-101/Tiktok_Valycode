@@ -34,9 +34,25 @@ Want to try it before getting keys? `PTRADE_OFFLINE_PRICES=sample/offline-prices
 
 On Windows, run `python -m paper_trading <command>` from this folder instead of `./ptrade`.
 
-## Monthly cycle
+## Using it (visual app)
 
-At the start of each month:
+**Windows:** double-click **`Paper Trading.bat`** in this folder.
+**Mac/Linux:** run `./ptrade` (or `python3 -m paper_trading`).
+
+Your browser opens the app at `http://127.0.0.1:8765`. Keep the black window open while you use it,
+and close it when you're done. It only runs on your computer. At the start of each month:
+
+1. Tick the stocks you want and type a percentage for each (the total must reach 100%)
+2. Press **Preview** to see exactly what each portfolio would buy
+3. Write your reasoning
+4. Press **Lock decision and buy**
+
+The same page shows the benchmark panel, your holdings, last month's review and every decision
+next to its outcome. The notes also appear in Obsidian.
+
+## Monthly cycle (command line)
+
+The same cycle without the browser:
 
 ```bash
 ./ptrade month

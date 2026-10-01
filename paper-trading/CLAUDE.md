@@ -6,6 +6,12 @@ No real money is involved. Saving comes first; this is practice.
 
 All commands run from this folder: `./ptrade <command>` (Python 3.10+, stdlib only, no install).
 
+## The visual app
+
+`./ptrade` with no command (or `Paper Trading.bat` on Windows) opens a local browser UI
+(`paper_trading/web.py` + `paper_trading/static/index.html`, 127.0.0.1 only). It calls the same
+`workflow.py` functions as the CLI, so the rules below apply to both.
+
 ## When the user asks for a returns breakdown
 
 Run `./ptrade report` and summarise it. Lead with the **gap vs benchmark** for each portfolio —

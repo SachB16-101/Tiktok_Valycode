@@ -253,9 +253,20 @@ def cmd_verify(cfg: Config, args) -> int:
     return 1
 
 
+def cmd_ui(cfg: Config, args) -> int:
+    from .web import serve
+    serve(args.port, open_browser=not args.no_browser)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="ptrade", description="Paper trading simulator with an Obsidian decision journal.")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub = ap.add_subparsers(dest="cmd")
+
+    w = sub.add_parser("ui", help="open the visual app in your browser (the default)")
+    w.add_argument("--port", type=int, default=8765)
+    w.add_argument("--no-browser", action="store_true", help="don't open a browser tab automatically")
+    w.set_defaults(fn=cmd_ui)
 
     sub.add_parser("init", help="create vault folders + ledger, check API keys").set_defaults(fn=cmd_init)
 
@@ -295,6 +306,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     args = build_parser().parse_args(argv)
+    if not args.cmd:  # no command: open the visual app
+        args = build_parser().parse_args(["ui"])
     cfg = load_config()
     try:
         return args.fn(cfg, args)

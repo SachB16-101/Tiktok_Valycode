@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Trading</title>
+<style>
+:root {
+  --bg: #f6f5f2; --card: #ffffff; --ink: #1c1d1f; --muted: #6b6e74; --line: #e4e2dd;
+  --accent: #2f5d50; --accent-ink: #ffffff; --up: #1f7a4d; --down: #b4372f; --warn-bg: #fff6e0; --warn: #8a5a00;
+  --chip: #eef1ef; --focus: #2f5d5033;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141517; --card: #1c1d20; --ink: #ecebe8; --muted: #9a9ca1; --line: #2c2e32;
+    --accent: #7fb8a4; --accent-ink: #0f1a16; --up: #5cc18b; --down: #ef7a70; --warn-bg: #2d2617; --warn: #e8c070;
+    --chip: #24272a; --focus: #7fb8a433;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar { max-width: 1080px; margin: 0 auto; padding: 14px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.bar h1 { font-size: 17px; margin: 0; letter-spacing: -.01em; }
+.bar .meta { color: var(--muted); font-size: 13px; }
+.bar .spacer { flex: 1; }
+main { max-width: 1080px; margin: 0 auto; padding: 20px; display: grid; gap: 20px; }
+main > *, .pgrid > *, .plan-grid > *, .pick > * { min-width: 0; }
+code { overflow-wrap: anywhere; }
+section.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+h2 { font-size: 15px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+.num { font-variant-numeric: tabular-nums; }
+.up { color: var(--up); } .down { color: var(--down); }
+.muted { color: var(--muted); }
+button { font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  padding: 8px 14px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+input, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+input:focus, textarea:focus, button:focus-visible { outline: 3px solid var(--focus); border-color: var(--accent); }
+textarea { width: 100%; min-height: 110px; resize: vertical; }
+.banner { border-radius: 10px; padding: 12px 14px; background: var(--warn-bg); color: var(--warn); font-size: 14px; }
+.banner.ok { background: var(--chip); color: var(--ink); }
+
+/* portfolio cards */
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.pcard { border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.pcard .label { color: var(--muted); font-size: 13px; }
+.pcard .value { font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin: 2px 0; }
+.pcard .gap { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pcard .gap strong { font-size: 18px; }
+.kv { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+
+/* picker */
+.steps { display: grid; gap: 22px; }
+.step-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.step-n { width: 24px; height: 24px; border-radius: 50%; background: var(--chip); display: inline-grid; place-items: center;
+  font-size: 13px; font-weight: 600; flex: none; }
+.pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.row { display: grid; grid-template-columns: auto 1fr auto 86px; gap: 10px; align-items: center;
+  border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+.row.on { border-color: var(--accent); background: var(--chip); }
+.row .t { font-weight: 600; }
+.row .n { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row input[type=number] { width: 86px; text-align: right; padding: 6px 8px; }
+.row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.total { margin-left: auto; font-weight: 600; }
+.meter { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; margin-top: 10px; }
+.meter > div { height: 100%; background: var(--accent); transition: width .15s; }
+.meter.over > div { background: var(--down); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; font-weight: 600; color: var(--muted); }
+.tablewrap { overflow-x: auto; }
+.warn-list { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--warn); }
+.tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tabs button[aria-selected=true] { background: var(--chip); border-color: var(--accent); }
+blockquote { margin: 8px 0; padding: 8px 14px; border-left: 3px solid var(--accent); background: var(--chip); border-radius: 0 8px 8px 0; white-space: pre-wrap; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.plan-grid h3 { font-size: 14px; margin: 0 0 6px; }
+.small { font-size: 13px; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); max-width: 460px; padding: 22px; }
+dialog::backdrop { background: #0006; }
+@media (max-width: 600px) { main { padding: 12px; } section.card { padding: 16px; } .row { grid-template-columns: auto 1fr 76px; } .row .p { display: none; } }
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <h1>Paper Trading</h1>
+  <span class="meta" id="meta">Loading…</span>
+  <span class="spacer"></span>
+  <button id="refresh" title="Fetch latest prices">Refresh prices</button>
+</div></header>
+
+<main id="app"><p class="muted"><span class="spinner"></span> Fetching prices…</p></main>
+
+<dialog id="confirm">
+  <h2>Lock this decision and buy?</h2>
+  <p class="sub" id="confirm-text"></p>
+  <p class="small">Your reasoning is saved to Obsidian and becomes <strong>read-only</strong>. You can't change this month's allocation afterwards.</p>
+  <div class="tools"><button id="confirm-no">Go back</button><span class="spacer" style="flex:1"></span><button class="primary" id="confirm-yes">Lock and buy</button></div>
+</dialog>
+
+<script>
+const TOKEN = "__TOKEN__";
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const gbpF = new Intl.NumberFormat("en-GB", {style: "currency", currency: "GBP"});
+const usdF = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
+const gbp = (x, signed) => (signed && x > 0.004 ? "+" : "") + gbpF.format(Math.abs(x) < 0.005 ? 0 : x);
+const usd = x => usdF.format(x);
+const pct = (x, signed = true) => { const v = Math.abs(x * 100) < 0.005 ? 0 : x * 100; return (signed && v > 0 ? "+" : "") + v.toFixed(2) + "%"; };
+const pp = x => { const v = Math.abs(x * 100) < 0.005 ? 0 : x * 100; return (v > 0 ? "+" : "") + v.toFixed(2) + " pp"; };
+const cls = x => x > 0.00005 ? "up" : x < -0.00005 ? "down" : "";
+const qty = q => Number.isInteger(q) ? String(q) : q.toFixed(6).replace(/0+$/, "");
+const monthName = c => new Date(c + "-01T12:00:00").toLocaleString("en-GB", {month: "long", year: "numeric"});
+
+let S = null;                 // server state
+const alloc = {};             // ticker -> percent (only ticked ones)
+let previewOK = false;        // preview matches current allocation
+let holdingsTab = 0;
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {
+    method: "POST", headers: {"Content-Type": "application/json", "X-Token": TOKEN}, body: JSON.stringify(body)});
+  const data = await res.json().catch(() => ({error: "Bad response from the app"}));
+  if (!res.ok || (data.error && body !== undefined)) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+async function load() {
+  $("#refresh").disabled = true;
+  try { S = await api("/api/state"); }
+  catch (e) { S = {error: e.message}; }
+  $("#refresh").disabled = false;
+  render();
+}
+
+function total() { return Object.values(alloc).reduce((a, b) => a + (+b || 0), 0); }
+
+function render() {
+  const app = $("#app");
+  if (!S || (S.error && !S.universe)) { app.innerHTML = `<div class="banner">${esc(S?.error)}</div>`; return; }
+  $("#meta").textContent = `${monthName(S.cycle)}` + (S.fx ? ` · £1 = ${usd(S.fx)}` : "") +
+    (S.sources ? ` · prices via ${[...new Set(Object.values(S.sources))].join(", ")}` : "");
+  app.innerHTML = [
+    S.vault_is_fallback ? `<div class="banner">OBSIDIAN_VAULT_PATH isn't set in <code>.env</code>, so notes are going to <code>${esc(S.vault_folder)}</code> instead of your vault.</div>` : "",
+    S.error ? `<div class="banner"><strong>Can't get prices:</strong> ${esc(S.error)}<br>Check your keys in <code>.env</code>, then press Refresh prices.</div>` : "",
+    S.panel ? panelHTML() : "",
+    monthHTML(),
+    S.panel?.length ? holdingsHTML() : "",
+    S.review ? reviewHTML() : "",
+    S.outcomes?.length ? outcomesHTML() : "",
+  ].join("");
+  wire();
+}
+
+/* ---------- benchmark panel ---------- */
+function panelHTML() {
+  if (!S.panel.length) return `<section class="card"><h2>Your portfolios</h2>
+    <p class="sub">Nothing bought yet. Pick this month's stocks below to start all three portfolios: ${S.portfolios.map(p => esc(p.name)).join(", ")} a month.</p></section>`;
+  return `<section class="card"><h2>How you're doing vs just buying the S&amp;P 500</h2>
+  <p class="sub">Each portfolio is compared with ${esc(S.benchmark)} bought with the same money on the same days, after the same fees. The gap is the number that matters.</p>
+  <div class="pgrid">${S.panel.map(p => `
+    <div class="pcard">
+      <div class="label">${esc(p.name)} a month · ${p.months} month${p.months === 1 ? "" : "s"}</div>
+      <div class="value num">${gbp(p.value_gbp)}</div>
+      <div class="num ${cls(p.return_gbp)}">${gbp(p.return_gbp, true)} (${pct(p.return_pct)})</div>
+      <div class="kv num"><span>Put in</span><span>${gbp(p.contributed_gbp)}</span></div>
+      <div class="gap">
+        <div class="kv"><span>${esc(S.benchmark)} would be</span><span class="num">${gbp(p.bench_value_gbp)} (${pct(p.bench_return_pct)})</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px">
+          <span>Gap vs benchmark</span><strong class="num ${cls(p.gap_pct)}">${pp(p.gap_pct)}</strong></div>
+        <div class="kv num"><span>${p.gap_pct > 0.00005 ? "ahead by" : p.gap_pct < -0.00005 ? "behind by" : "level with it"}</span><span class="${cls(p.gap_gbp)}">${gbp(p.gap_gbp, true)}</span></div>
+      </div>
+      <div class="kv num" style="margin-top:8px"><span>Fees paid</span><span>${gbp(p.fees_gbp)}</span></div>
+      <div class="kv num"><span>Cash not invested</span><span>${gbp(p.cash_gbp)}</span></div>
+      <div class="kv num"><span>If markets fell 20%</span><span class="down">${gbp(-0.2 * p.value_gbp)}</span></div>
+    </div>`).join("")}</div></section>`;
+}
+
+/* ---------- this month ---------- */
+function monthHTML() {
+  if (S.already_run) return `<section class="card"><h2>${monthName(S.cycle)}: done ✓</h2>
+    <p class="sub">This month's money has been invested. Come back at the start of next month for the next allocation.</p>
+    <div class="banner ok small">Your report and locked journal entry are in Obsidian under <code>${esc(S.vault_folder)}</code>.</div></section>`;
+  if (S.pending) return `<section class="card"><h2>${monthName(S.cycle)}: locked but not bought yet</h2>
+    <p class="sub">You locked this decision earlier but the buy didn't finish (probably a price error). It can't be changed now, only completed.</p>
+    <p><strong>${Object.entries(S.pending.allocation).map(([t, w]) => `${esc(t)} ${w}%`).join(" · ")}</strong></p>
+    <blockquote>${esc(S.pending.reasoning)}</blockquote>
+    <button class="primary" id="finish">Buy now</button> <span id="exec-msg" class="small"></span></section>`;
+  const uni = [...S.universe].sort((x, y) => (y.ticker === S.benchmark) - (x.ticker === S.benchmark));
+  const rows = uni.map(u => {
+    const on = u.ticker in alloc, price = S.prices?.[u.ticker];
+    return `<label class="row ${on ? "on" : ""}">
+      <input type="checkbox" data-t="${esc(u.ticker)}" ${on ? "checked" : ""}>
+      <span style="min-width:0"><span class="t">${esc(u.ticker)}</span>${u.ticker === S.benchmark ? ' <span class="muted small">benchmark</span>' : ""}
+        <div class="n" title="${esc(u.note)}">${esc(u.note) || "&nbsp;"}</div></span>
+      <span class="p num small muted">${price ? usd(price) : ""}</span>
+      <input type="number" min="0" max="100" step="1" inputmode="decimal" data-w="${esc(u.ticker)}" value="${on ? alloc[u.ticker] : ""}" placeholder="%" ${on ? "" : "disabled"} aria-label="${esc(u.ticker)} percent">
+    </label>`;
+  }).join("");
+  return `<section class="card"><h2>${monthName(S.cycle)}: where should this month's money go?</h2>
+  <p class="sub">The same split is used for all three portfolios (${S.portfolios.map(p => esc(p.name)).join(", ")}). Nothing is sold: this only directs the new money.</p>
+  <div class="steps">
+    <div>
+      <div class="step-h"><span class="step-n">1</span><strong>Pick stocks and set percentages</strong></div>
+      <div class="pick">${rows}</div>
+      <div class="tools">
+        <input id="new-ticker" placeholder="Add a ticker, e.g. NVDA" style="width:190px" maxlength="10">
+        <button id="add-ticker">Add</button>
+        <button id="even" ${Object.keys(alloc).length ? "" : "disabled"}>Split evenly</button>
+        <button id="clear" ${Object.keys(alloc).length ? "" : "disabled"}>Clear</button>
+        <span class="total num" id="total"></span>
+      </div>
+      <div class="meter" id="meter"><div></div></div>
+      <div id="ticker-msg" class="small muted" style="margin-top:6px"></div>
+    </div>
+    <div>
+      <div class="step-h"><span class="step-n">2</span><strong>Preview the buys</strong><span class="small muted">See exactly what each portfolio gets at today's prices.</span></div>
+      <button id="preview" disabled>Preview</button>
+      <div id="preview-out" style="margin-top:12px"></div>
+    </div>
+    <div>
+      <div class="step-h"><span class="step-n">3</span><strong>Why this allocation?</strong><span class="small muted">Written before you buy, then locked.</span></div>
+      <textarea id="reasoning" placeholder="What's the thesis? What risk are you taking on purpose, and why is it worth it compared with just buying the index?"></textarea>
+      <div style="margin-top:10px"><label class="small muted" for="expectation">What do you expect to happen, and what would change your mind? (optional)</label>
+      <textarea id="expectation" style="min-height:70px;margin-top:4px"></textarea></div>
+    </div>
+    <div>
+      <div class="step-h"><span class="step-n">4</span><strong>Lock it in and buy</strong></div>
+      <button class="primary" id="execute" disabled>Lock decision and buy</button>
+      <span id="exec-msg" class="small muted" style="margin-left:8px"></span>
+    </div>
+  </div></section>`;
+}
+
+function planHTML(plan, unknown) {
+  return `<div class="plan-grid">${plan.map(p => `<div>
+    <h3>${esc(p.name)} a month</h3>
+    <div class="small muted">${gbp(p.contribution_gbp)} in · FX fee ${gbp(p.fx_fee_gbp)} · ${usd(p.usd_available)} to spend</div>
+    <div class="tablewrap"><table><thead><tr><th>Stock</th><th>Shares</th><th>Price</th><th>Cost</th></tr></thead><tbody>
+    ${p.trades.map(t => `<tr><td>${esc(t.ticker)}${t.fractional ? "" : ' <span class="muted small">whole only</span>'}</td><td class="num">${qty(t.qty)}</td><td class="num">${usd(t.price_usd)}</td><td class="num">${gbp(t.cost_gbp)}</td></tr>`).join("")}
+    </tbody></table></div>
+    ${p.skipped.length || p.cash_usd_after >= 0.01 ? `<ul class="warn-list">
+      ${p.skipped.map(s => `<li>⚠ <strong>${esc(s.ticker)} not bought</strong>: ${esc(s.reason)}</li>`).join("")}
+      ${p.cash_usd_after >= 0.01 ? `<li class="muted">${usd(p.cash_usd_after)} left as cash, invested next month</li>` : ""}</ul>` : ""}
+  </div>`).join("")}</div>
+  ${unknown?.length ? `<p class="small muted">Couldn't check whether ${unknown.map(esc).join(", ")} can be bought in fractions, so assumed yes.</p>` : ""}`;
+}
+
+/* ---------- holdings / review / journal ---------- */
+function holdingsHTML() {
+  const p = S.panel[holdingsTab] || S.panel[0];
+  return `<section class="card"><h2>What you own</h2><p class="sub">Values in pounds at today's prices and exchange rate.</p>
+  <div class="tabs" role="tablist">${S.panel.map((q, i) => `<button role="tab" data-tab="${i}" aria-selected="${q === p}">${esc(q.name)}</button>`).join("")}</div>
+  <div class="tablewrap"><table><thead><tr><th>Stock</th><th>Shares</th><th>Price</th><th>Value</th><th>Paid</th><th>Gain</th><th>Share of portfolio</th></tr></thead><tbody>
+  ${p.holdings.map(h => `<tr><td><strong>${esc(h.ticker)}</strong></td><td class="num">${qty(h.qty)}</td><td class="num">${usd(h.price_usd)}</td>
+    <td class="num">${gbp(h.value_gbp)}</td><td class="num">${gbp(h.cost_gbp)}</td>
+    <td class="num ${cls(h.gain_gbp)}">${gbp(h.gain_gbp, true)} (${pct(h.cost_gbp ? h.gain_gbp / h.cost_gbp : 0)})</td><td class="num">${pct(h.weight, false)}</td></tr>`).join("")}
+  ${p.cash_gbp >= 0.005 ? `<tr><td class="muted">Cash</td><td></td><td></td><td class="num">${gbp(p.cash_gbp)}</td><td></td><td></td><td class="num">${pct(p.cash_gbp / p.value_gbp, false)}</td></tr>` : ""}
+  </tbody></table></div></section>`;
+}
+
+function reviewHTML() {
+  const r = S.review, j = r.journal;
+  return `<section class="card"><h2>Since your ${monthName(r.cycle)} decision</h2>
+  <p class="sub">Your mix moved <strong class="${cls(r.allocation_move_pct)}">${pct(r.allocation_move_pct)}</strong> vs <strong class="${cls(r.bench_move_pct)}">${pct(r.bench_move_pct)}</strong> for ${esc(S.benchmark)} (share prices only).</p>
+  ${j ? `<div class="small muted">What you wrote at the time:</div><blockquote>${esc(j.reasoning)}</blockquote>
+  ${j.expectation ? `<div class="small muted">What you expected:</div><blockquote>${esc(j.expectation)}</blockquote>` : ""}` : ""}
+  ${r.portfolios[0] ? `<div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Stock</th><th>Price then</th><th>Price now</th><th>Move</th></tr></thead><tbody>
+  ${r.portfolios[r.portfolios.length - 1].holdings.map(h => `<tr><td>${esc(h.ticker)}</td><td class="num">${usd(h.price_then)}</td><td class="num">${usd(h.price_now)}</td><td class="num ${cls(h.move_pct)}">${pct(h.move_pct)}</td></tr>`).join("")}
+  </tbody></table></div>` : ""}</section>`;
+}
+
+function outcomesHTML() {
+  return `<section class="card"><h2>Every decision vs what happened</h2>
+  <p class="sub">About 12 decisions a year is far too few to tell skill from luck. Look for patterns in your reasoning, not a score.</p>
+  <div class="tablewrap"><table><thead><tr><th>Month</th><th style="text-align:left">Allocation</th><th>Your mix since</th><th>${esc(S.benchmark)}</th><th>Gap</th></tr></thead><tbody>
+  ${[...S.outcomes].reverse().map(o => `<tr title="${esc(o.entry.reasoning)}"><td>${monthName(o.entry.cycle)}</td>
+    <td style="text-align:left;white-space:normal">${Object.entries(o.entry.allocation).map(([t, w]) => `${esc(t)} ${w}%`).join(", ")}</td>
+    ${o.executed ? `<td class="num ${cls(o.allocation_move_pct)}">${pct(o.allocation_move_pct)}</td><td class="num">${pct(o.bench_move_pct)}</td><td class="num ${cls(o.gap_pct)}"><strong>${pp(o.gap_pct)}</strong></td>` : `<td colspan="3" class="muted">not bought</td>`}</tr>`).join("")}
+  </tbody></table></div></section>`;
+}
+
+/* ---------- events ---------- */
+function updateTotals() {
+  const el = $("#total"); if (!el) return;
+  const t = total(), left = 100 - t, ok = Math.abs(left) < 0.01, f = x => (+x.toFixed(2)).toString();
+  el.className = "total num " + (ok ? "up" : t > 100 ? "down" : "");
+  el.textContent = `${f(t)}% ` + (ok ? "✓" : t > 100 ? `(${f(-left)}% too much)` : `(${f(left)}% left)`);
+  $("#meter").className = "meter" + (t > 100.01 ? " over" : "");
+  $("#meter > div").style.width = Math.min(t, 100) + "%";
+  $("#preview").disabled = !(ok && !S.error);
+  updateExecuteButton();
+}
+
+function updateExecuteButton() {
+  const b = $("#execute"); if (!b) return;
+  const ok = Math.abs(total() - 100) < 0.01, reason = $("#reasoning").value.trim().length > 0;
+  b.disabled = !(ok && reason && previewOK && !S.error);
+  $("#exec-msg").textContent = !ok ? "Percentages must add up to 100%." : !previewOK ? "Preview first." : !reason ? "Write your reasoning first." : "";
+}
+
+function invalidate() { previewOK = false; }
+
+function wire() {
+  document.querySelectorAll("[data-t]").forEach(cb => cb.addEventListener("change", () => {
+    const t = cb.dataset.t;
+    if (cb.checked) alloc[t] = alloc[t] || 0; else delete alloc[t];
+    invalidate(); keepText(render);
+    if (cb.checked) $(`[data-w="${CSS.escape(t)}"]`)?.focus();
+  }));
+  document.querySelectorAll("[data-w]").forEach(inp => inp.addEventListener("input", () => {
+    alloc[inp.dataset.w] = Math.max(0, +inp.value || 0);
+    if (previewOK) { invalidate(); $("#preview-out").innerHTML = '<p class="small muted">Percentages changed. Preview again.</p>'; }
+    updateTotals();
+  }));
+  $("#even")?.addEventListener("click", () => {
+    const ts = Object.keys(alloc), base = Math.floor(100 / ts.length);
+    ts.forEach((t, i) => alloc[t] = base + (i < 100 - base * ts.length ? 1 : 0));
+    invalidate(); keepText(render);
+  });
+  $("#clear")?.addEventListener("click", () => { Object.keys(alloc).forEach(k => delete alloc[k]); invalidate(); keepText(render); });
+  $("#add-ticker")?.addEventListener("click", addTicker);
+  $("#new-ticker")?.addEventListener("keydown", e => { if (e.key === "Enter") addTicker(); });
+  $("#preview")?.addEventListener("click", doPreview);
+  $("#reasoning")?.addEventListener("input", updateExecuteButton);
+  $("#execute")?.addEventListener("click", askConfirm);
+  $("#finish")?.addEventListener("click", () => doExecute(true));
+  document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { holdingsTab = +b.dataset.tab; keepText(render); }));
+  updateTotals();
+  updateExecuteButton();
+}
+
+// Re-rendering rebuilds the page, so carry typed reasoning and the preview across it.
+let lastPreviewHTML = "";
+async function keepText(fn) {
+  const r = $("#reasoning")?.value, e = $("#expectation")?.value;
+  await fn();
+  if ($("#reasoning")) { $("#reasoning").value = r ?? ""; $("#expectation").value = e ?? ""; }
+  if (previewOK && $("#preview-out")) $("#preview-out").innerHTML = lastPreviewHTML;
+  updateExecuteButton();
+}
+
+async function addTicker() {
+  const inp = $("#new-ticker"), t = inp.value.trim().toUpperCase(), msg = $("#ticker-msg");
+  if (!t) return;
+  msg.innerHTML = `<span class="spinner"></span> Checking ${esc(t)}…`;
+  try {
+    const r = await api("/api/universe", {action: "add", ticker: t});
+    alloc[t] = alloc[t] || 0; invalidate();
+    await keepText(load);
+    $("#ticker-msg").textContent = r.added.length ? `Added ${t}. Set its percentage above.` : `${t} is already in the list — ticked it for you.`;
+  } catch (e) { msg.textContent = e.message; }
+}
+
+async function doPreview() {
+  const out = $("#preview-out");
+  out.innerHTML = `<span class="spinner"></span> Getting today's prices…`;
+  try {
+    const d = await api("/api/preview", {allocation: alloc});
+    lastPreviewHTML = planHTML(d.plan, d.unknown_fractionable);
+    out.innerHTML = lastPreviewHTML; previewOK = true;
+  } catch (e) { out.innerHTML = `<div class="banner">${esc(e.message)}</div>`; previewOK = false; }
+  updateExecuteButton();
+}
+
+function askConfirm() {
+  const d = $("#confirm");
+  $("#confirm-text").textContent = Object.entries(alloc).filter(([, w]) => w > 0).map(([t, w]) => `${t} ${w}%`).join(" · ");
+  d.showModal();
+  $("#confirm-no").onclick = () => d.close();
+  $("#confirm-yes").onclick = () => { d.close(); doExecute(false); };
+}
+
+async function doExecute(finishPending) {
+  const msg = $("#exec-msg"), btn = $("#execute") || $("#finish");
+  btn.disabled = true; msg.innerHTML = `<span class="spinner"></span> Locking journal and buying…`;
+  try {
+    const body = finishPending ? {} : {allocation: alloc, reasoning: $("#reasoning").value, expectation: $("#expectation").value};
+    const d = await api("/api/execute", body);
+    Object.keys(alloc).forEach(k => delete alloc[k]); previewOK = false;
+    await load();
+    $("#app").insertAdjacentHTML("afterbegin", `<div class="banner ok"><strong>Done.</strong> Bought for all three portfolios. In Obsidian: your locked decision, this month's report and the updated dashboard.</div>`);
+    window.scrollTo({top: 0, behavior: "smooth"});
+  } catch (e) { msg.textContent = e.message; btn.disabled = false; }
+}
+
+$("#refresh").addEventListener("click", () => keepText(load));
+load();
+</script>
+</body>
+</html>
